@@ -351,12 +351,12 @@ class Background {
       this.window.webContents.send('isMaximized', false);
     });
 
-    this.window.webContents.on('new-window', function (e, url) {
-      e.preventDefault();
+    this.window.webContents.setWindowOpenHandler(({ url }) => {
       log('open url');
       const excludeHosts = ['www.last.fm'];
       const exclude = excludeHosts.find(host => url.includes(host));
       if (exclude) {
+        // Open excluded hosts in a new BrowserWindow
         const newWindow = new BrowserWindow({
           width: 800,
           height: 600,
@@ -368,9 +368,10 @@ class Background {
           },
         });
         newWindow.loadURL(url);
-        return;
+        return { action: 'deny' };
       }
       shell.openExternal(url);
+      return { action: 'deny' };
     });
   }
 
@@ -409,9 +410,9 @@ class Background {
       // set proxy
       const proxyRules = this.store.get('proxy');
       if (proxyRules) {
-        this.window.webContents.session.setProxy({ proxyRules }, result => {
-          log('finished setProxy', result);
-        });
+        this.window.webContents.session
+          .setProxy({ proxyRules })
+          .then(() => log('finished setProxy'));
       }
 
       // check for updates

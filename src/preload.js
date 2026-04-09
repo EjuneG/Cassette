@@ -1,8 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import os from 'os';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  platform: os.platform(),
+  platform: process.platform,
   send: (channel, ...args) => ipcRenderer.send(channel, ...args),
   on: (channel, callback) => {
     const listener = (_event, ...args) => callback(...args);

@@ -284,14 +284,9 @@ export function initIpcMain(win, store, trayEventEmitter) {
   ipcMain.on('setProxy', (event, config) => {
     const proxyRules = `${config.protocol}://${config.server}:${config.port}`;
     store.set('proxy', proxyRules);
-    win.webContents.session.setProxy(
-      {
-        proxyRules,
-      },
-      () => {
-        log('finished setProxy');
-      }
-    );
+    win.webContents.session
+      .setProxy({ proxyRules })
+      .then(() => log('finished setProxy'));
   });
 
   ipcMain.on('removeProxy', (event, arg) => {
