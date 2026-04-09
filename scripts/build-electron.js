@@ -8,7 +8,7 @@ const path = require('path');
 const ESBUILD_COMMON = {
   bundle: true,
   platform: 'node',
-  target: 'node16',
+  target: 'node22',
   external: [
     'electron',
     'electron-updater',

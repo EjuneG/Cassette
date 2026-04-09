@@ -28,7 +28,7 @@ const ESBUILD_EXTERNAL = [
 const ESBUILD_COMMON = {
   bundle: true,
   platform: 'node',
-  target: 'node16',
+  target: 'node22',
   external: ESBUILD_EXTERNAL,
   alias: { '@': path.resolve(__dirname, '../src') },
   define: {
