@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YesPlayMusic — a third-party Netease Cloud Music (网易云音乐) player. Runs as both a web app and an Electron desktop client (macOS/Windows/Linux). Built with Vue 2 + Vuex + Vue Router + Howler.js.
-
-Currently in maintenance mode (v0.4.x); a separate 2.0 Alpha exists elsewhere.
+YesPlayMusic — a third-party Netease Cloud Music (网易云音乐) player. Runs as both a web app and an Electron desktop client (macOS/Windows/Linux). Built with Vue 3 + Vuex 4 + Vue Router 4 + Howler.js + Vite + Electron 41.
 
 ## Commands
 
@@ -31,7 +29,7 @@ yarn lint                  # ESLint (vue/recommended + prettier)
 yarn prettier              # Format all src/ with Prettier
 ```
 
-Node.js version requirement: 14 or 16 (`engines` field in package.json).
+Node.js version requirement: >=18 (`engines` field in package.json). Electron 41 bundles Node 24 internally.
 
 ## Architecture
 
@@ -65,10 +63,10 @@ Key top-level state sections:
 Three login methods: phone, email, QR code. Cookie-based (`MUSIC_U`). Two auth levels: loose login (guest/phone) vs account login (full account). Managed in `src/utils/auth.js` and `src/api/auth.js`.
 
 ### Path Alias
-`@/` maps to `src/` (configured in `jsconfig.json` and `vue.config.js`).
+`@/` maps to `src/` (configured in `jsconfig.json` and `vite.config.js`).
 
 ## Code Style
 
 - Prettier: single quotes, trailing commas (es5), 2-space indent, no semicolons omission, arrow parens "avoid", LF line endings
 - ESLint: `plugin:vue/recommended` + `@vue/prettier`
-- Vue 2 Options API throughout (no Composition API)
+- Vue 3 Options API throughout (no Composition API)
