@@ -30,11 +30,7 @@ const delay = ms =>
       resolve('');
     }, ms);
   });
-const excludeSaveKeys = [
-  '_playing',
-  '_progress',
-  '_replaceTrackNonce',
-];
+const excludeSaveKeys = ['_playing', '_progress', '_replaceTrackNonce'];
 
 function setTitle(track) {
   document.title = track
