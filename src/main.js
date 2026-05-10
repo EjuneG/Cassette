@@ -9,6 +9,7 @@ import { dailyTask } from '@/utils/common';
 import '@/assets/css/global.scss';
 import NProgress from 'nprogress';
 import '@/assets/css/nprogress.css';
+import { initRendererErrorReporter } from '@/utils/errorReporter';
 
 window.resetApp = () => {
   localStorage.clear();
@@ -30,6 +31,7 @@ NProgress.configure({ showSpinner: false, trickleSpeed: 100 });
 dailyTask();
 
 const app = createApp(App);
+initRendererErrorReporter(app);
 app.use(store);
 app.use(router);
 app.use(i18n);

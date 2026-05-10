@@ -10,7 +10,7 @@
     <MvRow :mvs="mvs" subtitle="publishTime" />
     <div class="load-more">
       <ButtonTwoTone v-show="hasMore" color="grey" @click="loadMVs">{{
-        $t('explore.loadMore')
+        $t('common.loadMore')
       }}</ButtonTwoTone>
     </div>
   </div>

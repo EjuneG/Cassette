@@ -1,6 +1,5 @@
 import { getAlbum } from '@/api/album';
 import { getArtist } from '@/api/artist';
-import { trackScrobble, trackUpdateNowPlaying } from '@/api/lastfm';
 import { getPlaylistDetail, intelligencePlaylist } from '@/api/playlist';
 import { getLyric, getMP3, getTrackDetail, scrobble } from '@/api/track';
 import store from '@/store';
@@ -31,7 +30,11 @@ const delay = ms =>
       resolve('');
     }, ms);
   });
-const excludeSaveKeys = ['_playing', '_progress', '_replaceTrackNonce'];
+const excludeSaveKeys = [
+  '_playing',
+  '_progress',
+  '_replaceTrackNonce',
+];
 
 function setTitle(track) {
   document.title = track
@@ -215,14 +218,16 @@ export default class {
   }
   _setIntervals() {
     // 同步播放进度
-    // TODO: 如果 _progress 在别的地方被改变了，
-    // 这个定时器会覆盖之前改变的值，是bug
     setInterval(() => {
       if (this._howler === null) return;
-      this._progress = this._howler.seek();
-      localStorage.setItem('playerCurrentTrackTime', this._progress);
+      const progress = this._howler.seek();
+      // seek() 在 Howl 未加载时会返回 Howl 实例而非数字，需过滤
+      if (typeof progress !== 'number') return;
+      // 通过 store.state.player 赋值，触发 Vue 3 响应式更新
+      store.state.player._progress = progress;
+      localStorage.setItem('playerCurrentTrackTime', progress);
       if (isCreateMpris) {
-        electronAPI?.send('playerCurrentTrackTime', this._progress);
+        electronAPI?.send('playerCurrentTrackTime', progress);
       }
     }, 1000);
   }
@@ -282,23 +287,11 @@ export default class {
       sourceid: this.playlistSource.id,
       time,
     });
-    if (
-      store.state.lastfm.key !== undefined &&
-      (time >= trackDuration / 2 || time >= 240)
-    ) {
-      const timestamp = ~~(new Date().getTime() / 1000) - time;
-      trackScrobble({
-        artist: track.ar[0].name,
-        track: track.name,
-        timestamp,
-        album: track.al.name,
-        trackNumber: track.no,
-        duration: trackDuration,
-      });
-    }
   }
   _playAudioSource(source, autoplay = true) {
     Howler.unload();
+    // 切换音源时立即重置进度，通过 store 触发 Vue 响应式
+    store.state.player._progress = 0;
     this._howler = new Howl({
       src: [source],
       html5: true,
@@ -515,7 +508,8 @@ export default class {
     track,
     autoplay,
     isCacheNextTrack,
-    ifUnplayableThen = UNPLAYABLE_CONDITION.PLAY_NEXT_TRACK
+    ifUnplayableThen = UNPLAYABLE_CONDITION.PLAY_NEXT_TRACK,
+    retryCount = 0
   ) {
     return this._getAudioSource(track)
       .then(source => {
@@ -549,6 +543,25 @@ export default class {
         }
       })
       .catch(err => {
+        const isTimeout =
+          err.code === 'ECONNABORTED' ||
+          (err.message && err.message.includes('timeout'));
+        if (isTimeout && retryCount < 2) {
+          console.warn(
+            `[Player] _replaceCurrentTrackAudio(${
+              track?.id
+            }) timeout, retrying (${retryCount + 1}/2)...`
+          );
+          return delay(1000).then(() =>
+            this._replaceCurrentTrackAudio(
+              track,
+              autoplay,
+              isCacheNextTrack,
+              ifUnplayableThen,
+              retryCount + 1
+            )
+          );
+        }
         console.error(
           `[Player] _replaceCurrentTrackAudio(${track?.id}) failed:`,
           err
@@ -762,15 +775,6 @@ export default class {
         setTitle(this._currentTrack);
       }
       this._playDiscordPresence(this._currentTrack, this.seek());
-      if (store.state.lastfm.key !== undefined) {
-        trackUpdateNowPlaying({
-          artist: this.currentTrack.ar[0].name,
-          track: this.currentTrack.name,
-          album: this.currentTrack.al.name,
-          trackNumber: this.currentTrack.no,
-          duration: ~~(this.currentTrack.dt / 1000),
-        });
-      }
     });
   }
   playOrPause() {

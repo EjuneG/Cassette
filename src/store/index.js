@@ -52,7 +52,7 @@ let player = new Player();
 player = new Proxy(player, {
   set(target, prop, val) {
     target[prop] = val;
-    if (prop === '_howler') return true;
+    if (prop === '_howler' || prop === '_progress') return true;
     target.saveSelfToLocalStorage();
     target.sendSelfToIpcMain();
     return true;

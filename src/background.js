@@ -34,6 +34,10 @@ import Store from 'electron-store';
 import { createMpris, createDbus } from '@/electron/mpris';
 import { spawn } from 'child_process';
 import clc from 'cli-color';
+import { initMainErrorReporter } from '@/utils/errorReporter';
+
+initMainErrorReporter();
+
 const log = text => {
   console.log(`${clc.blueBright('[background.js]')} ${text}`);
 };
@@ -57,10 +61,9 @@ const closeOnLinux = (e, win, store) => {
       })
       .then(result => {
         if (result.checkboxChecked && result.response !== 2) {
-          win.webContents.send(
-            'rememberCloseAppOption',
-            result.response === 0 ? 'minimizeToTray' : 'exit'
-          );
+          const value = result.response === 0 ? 'minimizeToTray' : 'exit';
+          store.set('settings.closeAppOption', value);
+          win.webContents.send('rememberCloseAppOption', value);
         }
 
         if (result.response === 0) {

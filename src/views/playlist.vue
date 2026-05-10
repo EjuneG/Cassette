@@ -181,7 +181,7 @@
         color="grey"
         :loading="loadingMore"
         @click="loadMore(100)"
-        >{{ $t('explore.loadMore') }}</ButtonTwoTone
+        >{{ $t('common.loadMore') }}</ButtonTwoTone
       >
     </div>
 

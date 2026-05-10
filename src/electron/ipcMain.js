@@ -45,7 +45,7 @@ const exitAsk = (e, win) => {
     });
 };
 
-const exitAskWithoutMac = (e, win) => {
+const exitAskWithoutMac = (e, win, store) => {
   e.preventDefault(); //阻止默认行为
   dialog
     .showMessageBox({
@@ -59,10 +59,9 @@ const exitAskWithoutMac = (e, win) => {
     })
     .then(result => {
       if (result.checkboxChecked && result.response !== 2) {
-        win.webContents.send(
-          'rememberCloseAppOption',
-          result.response === 0 ? 'minimizeToTray' : 'exit'
-        );
+        const value = result.response === 0 ? 'minimizeToTray' : 'exit';
+        store.set('settings.closeAppOption', value);
+        win.webContents.send('rememberCloseAppOption', value);
       }
 
       if (result.response === 0) {
@@ -233,7 +232,7 @@ export function initIpcMain(win, store, trayEventEmitter) {
         e.preventDefault();
         win.hide();
       } else {
-        exitAskWithoutMac(e, win);
+        exitAskWithoutMac(e, win, store);
       }
     }
   });

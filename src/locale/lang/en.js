@@ -2,10 +2,10 @@ export default {
   common: {
     play: 'PLAY',
     songs: 'Songs',
+    loadMore: 'Load More',
   },
   nav: {
     home: 'Home',
-    explore: 'Explore',
     library: 'Library',
     search: 'Search',
     github: 'GitHub Repo',
@@ -14,11 +14,8 @@ export default {
     settings: 'Settings',
   },
   home: {
-    recommendPlaylist: 'Recommended Playlists',
-    recommendArtist: 'Recommended Artists',
     newAlbum: 'Latest Albums',
     seeMore: 'SEE MORE',
-    charts: 'Charts',
   },
   library: {
     sLibrary: "'s Library",
@@ -40,10 +37,6 @@ export default {
       settings: 'Settings',
       logout: 'Logout',
     },
-  },
-  explore: {
-    explore: 'Explore',
-    loadMore: 'Load More',
   },
   artist: {
     latestRelease: 'Latest Releases',

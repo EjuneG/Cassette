@@ -18,7 +18,7 @@ import { mapTrackPlayableStatus } from '@/utils/common';
  */
 export function search(params) {
   return request({
-    url: '/search',
+    url: '/cloudsearch',
     method: 'get',
     params,
   }).then(data => {
@@ -27,3 +27,4 @@ export function search(params) {
     return data;
   });
 }
+

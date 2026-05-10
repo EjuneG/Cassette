@@ -85,20 +85,16 @@ export default {
     },
     showPlayer() {
       return (
-        [
-          'mv',
-          'loginUsername',
-          'login',
-          'loginAccount',
-          'lastfmCallback',
-        ].includes(this.$route.name) === false
+        ['mv', 'loginUsername', 'login', 'loginAccount'].includes(
+          this.$route.name
+        ) === false
       );
     },
     enablePlayer() {
-      return this.player.enabled && this.$route.name !== 'lastfmCallback';
+      return this.player.enabled;
     },
     showNavbar() {
-      return this.$route.name !== 'lastfmCallback';
+      return true;
     },
   },
   watch: {

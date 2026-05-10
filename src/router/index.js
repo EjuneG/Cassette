@@ -91,15 +91,6 @@ const routes = [
     component: () => import('@/views/newAlbum.vue'),
   },
   {
-    path: '/explore',
-    name: 'explore',
-    component: () => import('@/views/explore.vue'),
-    meta: {
-      keepAlive: true,
-      savePosition: true,
-    },
-  },
-  {
     path: '/library',
     redirect: '/',
   },
@@ -123,11 +114,6 @@ const routes = [
     meta: {
       requireAccountLogin: true,
     },
-  },
-  {
-    path: '/lastfm/callback',
-    name: 'lastfmCallback',
-    component: () => import('@/views/lastfmCallback.vue'),
   },
   {
     path: '/:pathMatch(.*)*',

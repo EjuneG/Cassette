@@ -160,7 +160,10 @@ export default {
           return { result: result.result, type };
         })
         .catch(err => {
-          showToast(err.response.data.msg || err.response.data.message);
+          showToast(
+            err?.response?.data?.msg || err?.response?.data?.message || 'Error'
+          );
+          return { result: undefined, type };
         });
     },
     getData() {

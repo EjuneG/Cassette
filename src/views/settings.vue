@@ -460,23 +460,6 @@
       </section>
 
       <h3>{{ $t('settings.customization') }}</h3>
-      <div class="item">
-        <div class="left">
-          <div class="title">
-            {{
-              isLastfmConnected
-                ? `已连接到 Last.fm (${lastfm.name})`
-                : '连接 Last.fm '
-            }}</div
-          >
-        </div>
-        <div class="right">
-          <button v-if="isLastfmConnected" @click="lastfmDisconnect()"
-            >断开连接
-          </button>
-          <button v-else @click="lastfmConnect()"> 授权连接 </button>
-        </div>
-      </div>
       <div v-if="isElectron" class="item">
         <div class="left">
           <div class="title">
@@ -770,7 +753,6 @@
 <script>
 import { mapState, mapActions } from 'vuex';
 import { isLooseLoggedIn, doLogout } from '@/utils/auth';
-import { auth as lastfmAuth } from '@/api/lastfm';
 import { changeAppearance, bytesToSize } from '@/utils/common';
 import { countDBSize, clearDB } from '@/utils/db';
 import pkg from '../../package.json';
@@ -802,7 +784,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['player', 'settings', 'data', 'lastfm']),
+    ...mapState(['player', 'settings', 'data']),
     isElectron() {
       return process.env.IS_ELECTRON;
     },
@@ -1271,9 +1253,6 @@ export default {
         });
       },
     },
-    isLastfmConnected() {
-      return this.lastfm.key !== undefined;
-    },
   },
   created() {
     this.countDBSize('tracks');
@@ -1326,20 +1305,6 @@ export default {
       clearDB().then(() => {
         this.countDBSize();
       });
-    },
-    lastfmConnect() {
-      lastfmAuth();
-      let lastfmChecker = setInterval(() => {
-        const session = localStorage.getItem('lastfm');
-        if (session) {
-          this.$store.commit('updateLastfm', JSON.parse(session));
-          clearInterval(lastfmChecker);
-        }
-      }, 1000);
-    },
-    lastfmDisconnect() {
-      localStorage.removeItem('lastfm');
-      this.$store.commit('updateLastfm', {});
     },
     sendProxyConfig() {
       if (this.proxyProtocol === 'noProxy') return;

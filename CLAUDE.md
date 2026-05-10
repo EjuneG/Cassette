@@ -37,8 +37,17 @@ yarn electron:dev          # Electron dev
 yarn netease_api:run       # Run Netease API server standalone (needed for web dev)
 
 # Build
-yarn build                 # Web production build (Vite)
-yarn electron:build-main   # Electron main process build
+yarn build                 # Web production build (Vite, history router)
+yarn build:electron        # Renderer build for Electron (hash router, IS_ELECTRON=true)
+yarn electron:build-main   # Electron main process build (esbuild → dist-electron/main.js)
+
+# Local install (Linux) — build AppImage and replace ~/Applications/YesPlayMusic.AppImage
+ypm-update                 # git pull + build:electron + electron:build-main + electron-builder + install
+ypm-update --no-pull       # build current working tree without pulling
+# Script lives at ~/.local/bin/ypm-update; runs `npx electron-builder --linux AppImage`.
+# After finishing a feature/fix that should land in the desktop app, run `ypm-update`
+# (or `ypm-update --no-pull` if changes are still uncommitted) so the installed AppImage
+# picks up the new code on next launch.
 
 # Code quality
 yarn lint                  # ESLint (vue/recommended + prettier)

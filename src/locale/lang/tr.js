@@ -2,10 +2,10 @@ export default {
   common: {
     play: 'OYNAT',
     songs: 'Müzikler',
+    loadMore: 'Daha Fazlası',
   },
   nav: {
     home: 'Anasayfa',
-    explore: 'Keşfet',
     library: 'Kitaplık',
     search: 'Ara',
     github: 'GitHub Repo',
@@ -14,11 +14,8 @@ export default {
     settings: 'Ayarlar',
   },
   home: {
-    recommendPlaylist: 'Önerilen Çalma Listeier',
-    recommendArtist: 'Önerilen Sanatçılar',
     newAlbum: 'Son Çıkan Albümler',
     seeMore: 'DAHA FAZLASI',
-    charts: 'Listeler',
   },
   library: {
     sLibrary: "'in Kütüphanesi",
@@ -40,10 +37,6 @@ export default {
       settings: 'Ayarlar',
       logout: 'Çıkış Yap',
     },
-  },
-  explore: {
-    explore: 'Keşfet',
-    loadMore: 'Daha Fazlası',
   },
   artist: {
     latestRelease: 'Son Çıkanlar',

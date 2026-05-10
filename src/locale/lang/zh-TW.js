@@ -2,20 +2,17 @@ export default {
   common: {
     play: '播放',
     songs: '首歌',
+    loadMore: '載入更多',
   },
   nav: {
     home: '首頁',
-    explore: '發現',
     library: '音樂庫',
     search: '搜尋',
     github: 'GitHub Repo',
   },
   home: {
-    recommendPlaylist: '推薦歌單',
-    recommendArtist: '推薦藝人',
     newAlbum: '新曲上架',
     seeMore: '查看全部',
-    charts: '排行榜',
   },
   library: {
     sLibrary: '的音樂庫',
@@ -37,10 +34,6 @@ export default {
       settings: '設定',
       logout: '登出',
     },
-  },
-  explore: {
-    explore: '探索',
-    loadMore: '載入更多',
   },
   artist: {
     latestRelease: '最新發佈',

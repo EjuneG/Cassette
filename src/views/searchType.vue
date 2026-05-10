@@ -33,7 +33,7 @@
 
     <div class="load-more">
       <ButtonTwoTone v-show="hasMore" color="grey" @click="fetchData">{{
-        $t('explore.loadMore')
+        $t('common.loadMore')
       }}</ButtonTwoTone>
     </div>
   </div>
@@ -97,42 +97,45 @@ export default {
         keywords: this.keywords,
         type: typeTable[this.type],
         offset: this.result.length,
-      }).then(result => {
-        result = result.result;
-        this.hasMore = result.hasMore ?? true;
-        switch (this.type) {
-          case 'musicVideos':
-            this.result.push(...result.mvs);
-            if (result.mvCount <= this.result.length) {
-              this.hasMore = false;
-            }
-            break;
-          case 'artists':
-            this.result.push(...result.artists);
-            break;
-          case 'albums':
-            this.result.push(...result.albums);
-            if (result.albumCount <= this.result.length) {
-              this.hasMore = false;
-            }
-            break;
-          case 'tracks':
-            this.result.push(...result.songs);
-            this.getTracksDetail();
-            break;
-          case 'playlists':
-            this.result.push(...result.playlists);
-            break;
-        }
-        NProgress.done();
-        this.show = true;
-      }).catch(err => {
-        NProgress.done();
-        this.show = true;
-        this.showToast(
-          err?.response?.data?.msg || err?.response?.data?.message || 'Error'
-        );
-      });
+      })
+        .then(data => {
+          const result = data.result;
+          if (!result) return;
+          this.hasMore = result.hasMore ?? true;
+          switch (this.type) {
+            case 'musicVideos':
+              this.result.push(...(result.mvs ?? []));
+              if (result.mvCount <= this.result.length) {
+                this.hasMore = false;
+              }
+              break;
+            case 'artists':
+              this.result.push(...(result.artists ?? []));
+              break;
+            case 'albums':
+              this.result.push(...(result.albums ?? []));
+              if (result.albumCount <= this.result.length) {
+                this.hasMore = false;
+              }
+              break;
+            case 'tracks':
+              this.result.push(...(result.songs ?? []));
+              this.getTracksDetail();
+              break;
+            case 'playlists':
+              this.result.push(...(result.playlists ?? []));
+              break;
+          }
+          NProgress.done();
+          this.show = true;
+        })
+        .catch(err => {
+          NProgress.done();
+          this.show = true;
+          this.showToast(
+            err?.response?.data?.msg || err?.response?.data?.message || 'Error'
+          );
+        });
     },
     getTracksDetail() {
       const trackIDs = this.result.map(t => t.id);
