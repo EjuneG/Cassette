@@ -8,9 +8,9 @@
         :id="playlist.id"
         :image-url="resizeImage(playlist.coverImgUrl, 1024)"
         :show-play-button="true"
-        :always-show-shadow="true"
+        :always-show-shadow="false"
         :click-cover-to-play="true"
-        :fixed-size="288"
+        :fixed-size="192"
         type="playlist"
         :cover-hover="false"
         :play-button-size="18"
@@ -49,7 +49,11 @@
           {{ playlist.description }}
         </div>
         <div class="buttons">
-          <ButtonTwoTone icon-class="play" @click="playPlaylistByID()">
+          <ButtonTwoTone
+            icon-class="play"
+            color="orange"
+            @click="playPlaylistByID()"
+          >
             {{ $t('common.play') }}
           </ButtonTwoTone>
           <ButtonTwoTone
@@ -57,11 +61,7 @@
             :icon-class="playlist.subscribed ? 'heart-solid' : 'heart'"
             :icon-button="true"
             :horizontal-padding="0"
-            :color="playlist.subscribed ? 'blue' : 'grey'"
-            :text-color="playlist.subscribed ? '#335eea' : ''"
-            :background-color="
-              playlist.subscribed ? 'var(--color-secondary-bg)' : ''
-            "
+            color="grey"
             @click="likePlaylist"
           >
           </ButtonTwoTone>
@@ -108,7 +108,7 @@
         <ButtonTwoTone
           class="play-button"
           icon-class="play"
-          color="grey"
+          color="orange"
           @click="playPlaylistByID()"
         >
           {{ $t('common.play') }}
@@ -118,11 +118,7 @@
           :icon-class="playlist.subscribed ? 'heart-solid' : 'heart'"
           :icon-button="true"
           :horizontal-padding="0"
-          :color="playlist.subscribed ? 'blue' : 'grey'"
-          :text-color="playlist.subscribed ? '#335eea' : ''"
-          :background-color="
-            playlist.subscribed ? 'var(--color-secondary-bg)' : ''
-          "
+          color="grey"
           @click="likePlaylist"
         >
         </ButtonTwoTone>
@@ -556,65 +552,70 @@ export default {
 
 <style lang="scss" scoped>
 .playlist {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 .playlist-info {
   display: flex;
-  margin-bottom: 72px;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 36px;
   position: relative;
   .info {
     display: flex;
     flex-direction: column;
     justify-content: center;
     flex: 1;
-    margin-left: 56px;
+    min-width: 0;
     .title {
-      font-size: 36px;
+      font-size: 1.625rem;
       font-weight: 700;
-      color: var(--color-text);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--ink-strong);
 
       .lock-icon {
-        opacity: 0.28;
-        color: var(--color-text);
+        opacity: 0.6;
+        color: var(--ink-soft);
         margin-right: 8px;
         .svg-icon {
-          height: 26px;
-          width: 26px;
+          height: 18px;
+          width: 18px;
         }
       }
     }
     .artist {
-      font-size: 18px;
-      opacity: 0.88;
-      color: var(--color-text);
-      margin-top: 24px;
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-top: 12px;
     }
     .date-and-count {
-      font-size: 14px;
-      opacity: 0.68;
-      color: var(--color-text);
-      margin-top: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
     }
     .description {
-      font-size: 14px;
-      opacity: 0.68;
-      color: var(--color-text);
-      margin-top: 24px;
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-top: 14px;
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       overflow: hidden;
       cursor: pointer;
       &:hover {
-        transition: opacity 0.3s;
-        opacity: 0.88;
+        color: var(--ink-strong);
+        transition: color var(--motion-base) var(--ease-out);
       }
     }
     .buttons {
-      margin-top: 32px;
+      margin-top: 18px;
       display: flex;
       button {
-        margin-right: 16px;
+        margin-right: 12px;
       }
     }
   }
@@ -647,16 +648,18 @@ export default {
   }
 
   .title {
-    font-size: 84px;
+    font-size: 64px;
     line-height: 1.05;
     font-weight: 700;
     text-transform: uppercase;
+    color: var(--ink-strong);
 
-    letter-spacing: 4px;
+    letter-spacing: 2px;
     animation-duration: 0.8s;
     animation-name: letterSpacing4;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    /* Anti-Apple-Music gradient-text removed: solid ink + size for emphasis. */
+    background-clip: unset;
+    -webkit-text-fill-color: currentColor;
     // background-image: linear-gradient(
     //   225deg,
     //   var(--color-primary),
@@ -692,14 +695,8 @@ export default {
   background-image: linear-gradient(to left, #92fe9d 0%, #00c9ff 100%);
 }
 
-[data-theme='dark'] {
-  .gradient-radar {
-    background-image: linear-gradient(to left, #92fe9d 0%, #00c9ff 100%);
-  }
-}
-
 .gradient-radar {
-  background-image: linear-gradient(to left, #0ba360 0%, #3cba92 100%);
+  background-image: linear-gradient(to left, #92fe9d 0%, #00c9ff 100%);
 }
 
 .gradient-blue-purple {
@@ -870,13 +867,11 @@ export default {
   }
 }
 
-[data-theme='dark'] {
-  .search-box {
-    .active {
-      input,
-      .svg-icon {
-        color: var(--color-text);
-      }
+.search-box {
+  .active {
+    input,
+    .svg-icon {
+      color: var(--color-text);
     }
   }
 }
@@ -932,13 +927,11 @@ export default {
   }
 }
 
-[data-theme='dark'] {
-  .search-box-likepage {
-    .active {
-      input,
-      .svg-icon {
-        color: var(--color-text);
-      }
+.search-box-likepage {
+  .active {
+    input,
+    .svg-icon {
+      color: var(--color-text);
     }
   }
 }

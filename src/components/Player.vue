@@ -1,13 +1,6 @@
 <template>
-  <div class="player" @click="handleClick" @mousedown="handleMouseDown">
-    <div
-      class="progress-bar"
-      :class="{
-        nyancat: settings.nyancatStyle,
-        'nyancat-stop': settings.nyancatStyle && !player.playing,
-      }"
-      @click.stop
-    >
+  <div class="tape-compartment" :class="{ idle: !hasTrack }">
+    <div class="seek-rail" @click.stop>
       <vue-slider
         v-model="player.progress"
         :min="0"
@@ -15,151 +8,183 @@
         :interval="1"
         :drag-on-click="true"
         :duration="0"
-        :dot-size="12"
+        :dot-size="10"
         :height="2"
         :tooltip-formatter="formatTrackTime"
         :lazy="true"
         :silent="true"
       ></vue-slider>
     </div>
-    <div class="controls">
-      <div class="playing">
-        <div class="container" @click.stop>
+
+    <div class="compartment-row">
+      <!-- LEFT: cover + track info -->
+      <div class="block-now" @click.stop>
+        <button
+          class="cover-thumb"
+          :title="$t('player.lyrics') || 'Lyrics'"
+          @click="toggleLyrics"
+        >
           <img
+            v-if="currentTrack.al && currentTrack.al.picUrl"
             :src="resizeImage(currentTrack.al && currentTrack.al.picUrl, 224)"
             loading="lazy"
-            @click="goToAlbum"
           />
-          <div class="track-info" :title="audioSource">
-            <div
-              :class="['name', { 'has-list': hasList() }]"
-              @click="hasList() && goToList()"
+          <span v-else class="cover-empty mono-stamp">A·B</span>
+        </button>
+        <div v-if="hasTrack" class="track-meta" :title="audioSource">
+          <div
+            :class="['track-name', { linkable: hasList() }]"
+            @click="hasList() && goToList()"
+            >{{ currentTrack.name }}</div
+          >
+          <div class="track-line">
+            <span
+              v-for="(ar, index) in currentTrack.ar"
+              :key="ar.id"
+              class="artist-link"
+              :class="{ linkable: ar.id }"
+              @click="ar.id && goToArtist(ar.id)"
+              >{{ ar.name
+              }}<span v-if="index !== currentTrack.ar.length - 1"
+                >,
+              </span></span
             >
-              {{ currentTrack.name }}
-            </div>
-            <div class="artist">
-              <span
-                v-for="(ar, index) in currentTrack.ar"
-                :key="ar.id"
-                @click="ar.id && goToArtist(ar.id)"
-              >
-                <span :class="{ ar: ar.id }"> {{ ar.name }} </span
-                ><span v-if="index !== currentTrack.ar.length - 1">, </span>
-              </span>
-            </div>
-          </div>
-          <div class="like-button">
-            <button-icon
-              :title="
-                player.isCurrentTrackLiked
-                  ? $t('player.unlike')
-                  : $t('player.like')
-              "
-              @click="likeATrack(player.currentTrack.id)"
+            <span v-if="currentTrack.al && currentTrack.al.name" class="dot-sep"
+              >·</span
             >
-              <svg-icon
-                v-show="!player.isCurrentTrackLiked"
-                icon-class="heart"
-              ></svg-icon>
-              <svg-icon
-                v-show="player.isCurrentTrackLiked"
-                icon-class="heart-solid"
-              ></svg-icon>
-            </button-icon>
+            <span
+              v-if="currentTrack.al && currentTrack.al.name"
+              class="album-link"
+              :class="{ linkable: currentTrack.al.id }"
+              @click="goToAlbum"
+              >{{ currentTrack.al.name }}</span
+            >
           </div>
         </div>
-        <div class="blank"></div>
+        <div v-else class="track-meta">
+          <div class="track-name idle-prompt">{{
+            $t('player.idlePrompt') || 'Pick a track'
+          }}</div>
+          <div class="track-line">
+            <span class="mono-stamp">CASSETTE LOADED</span>
+          </div>
+        </div>
       </div>
-      <div class="middle-control-buttons">
-        <div class="blank"></div>
-        <div class="container" @click.stop>
-          <button-icon :title="$t('player.previous')" @click="playPrevTrack"
-            ><svg-icon icon-class="previous"
-          /></button-icon>
-          <button-icon
-            class="play"
+
+      <!-- CENTER: transport + timecode -->
+      <div class="block-transport" @click.stop>
+        <div class="transport">
+          <button
+            class="ctl"
+            :title="$t('player.previous')"
+            @click="playPrevTrack"
+          >
+            <svg-icon icon-class="previous" />
+          </button>
+          <button
+            class="ctl ctl-play"
             :title="$t(player.playing ? 'player.pause' : 'player.play')"
             @click="playOrPause"
           >
-            <svg-icon :icon-class="player.playing ? 'pause' : 'play'"
-          /></button-icon>
-          <button-icon :title="$t('player.next')" @click="playNextTrack"
-            ><svg-icon icon-class="next"
-          /></button-icon>
+            <svg-icon :icon-class="player.playing ? 'pause' : 'play'" />
+          </button>
+          <button class="ctl" :title="$t('player.next')" @click="playNextTrack">
+            <svg-icon icon-class="next" />
+          </button>
         </div>
-        <div class="blank"></div>
+        <div class="timecode mono-stamp">
+          <span>{{ formatTrackTime(player.progress) || '0:00' }}</span>
+          <span class="time-sep">/</span>
+          <span>{{
+            formatTrackTime(player.currentTrackDuration) || '0:00'
+          }}</span>
+        </div>
       </div>
-      <div class="right-control-buttons">
-        <div class="blank"></div>
-        <div class="container" @click.stop>
-          <button-icon
-            :title="$t('player.nextUp')"
-            :class="{ active: $route.name === 'next' }"
-            @click="goToNextTracksPage"
-            ><svg-icon icon-class="list"
-          /></button-icon>
-          <button-icon
-            :class="{ active: player.repeatMode !== 'off' }"
-            :title="
-              player.repeatMode === 'one'
-                ? $t('player.repeatTrack')
-                : $t('player.repeat')
-            "
-            @click="switchRepeatMode"
-          >
-            <svg-icon
-              v-show="player.repeatMode !== 'one'"
-              icon-class="repeat"
-            />
-            <svg-icon
-              v-show="player.repeatMode === 'one'"
-              icon-class="repeat-1"
-            />
-          </button-icon>
-          <button-icon
-            :class="{ active: player.shuffle }"
-            :title="$t('player.shuffle')"
-            @click="switchShuffle"
-            ><svg-icon icon-class="shuffle"
-          /></button-icon>
-          <button-icon
-            v-if="settings.enableReversedMode"
-            :class="{ active: player.reversed }"
-            :title="$t('player.reversed')"
-            @click="switchReversed"
-            ><svg-icon icon-class="sort-up"
-          /></button-icon>
-          <div class="volume-control">
-            <button-icon :title="$t('player.mute')" @click="mute">
-              <svg-icon v-show="volume > 0.5" icon-class="volume" />
-              <svg-icon v-show="volume === 0" icon-class="volume-mute" />
-              <svg-icon
-                v-show="volume <= 0.5 && volume !== 0"
-                icon-class="volume-half"
-              />
-            </button-icon>
-            <div class="volume-bar">
-              <vue-slider
-                v-model="volume"
-                :min="0"
-                :max="1"
-                :interval="0.01"
-                :drag-on-click="true"
-                :duration="0"
-                tooltip="none"
-                :dot-size="12"
-              ></vue-slider>
-            </div>
-          </div>
 
-          <button-icon
-            class="lyrics-button"
-            title="歌词"
-            style="margin-left: 12px"
-            @click="toggleLyrics"
-            ><svg-icon icon-class="arrow-up"
-          /></button-icon>
+      <!-- RIGHT: like + queue + repeat + shuffle + volume + lyrics -->
+      <div class="block-aux" @click.stop>
+        <button
+          class="ctl ctl-aux"
+          :title="
+            player.isCurrentTrackLiked ? $t('player.unlike') : $t('player.like')
+          "
+          @click="likeATrack(player.currentTrack.id)"
+        >
+          <svg-icon
+            :icon-class="player.isCurrentTrackLiked ? 'heart-solid' : 'heart'"
+          />
+        </button>
+        <button
+          class="ctl ctl-aux"
+          :class="{ active: $route.name === 'next' }"
+          :title="$t('player.nextUp')"
+          @click="goToNextTracksPage"
+        >
+          <svg-icon icon-class="list" />
+        </button>
+        <button
+          class="ctl ctl-aux"
+          :class="{ active: player.repeatMode !== 'off' }"
+          :title="
+            player.repeatMode === 'one'
+              ? $t('player.repeatTrack')
+              : $t('player.repeat')
+          "
+          @click="switchRepeatMode"
+        >
+          <svg-icon v-show="player.repeatMode !== 'one'" icon-class="repeat" />
+          <svg-icon
+            v-show="player.repeatMode === 'one'"
+            icon-class="repeat-1"
+          />
+        </button>
+        <button
+          class="ctl ctl-aux"
+          :class="{ active: player.shuffle }"
+          :title="$t('player.shuffle')"
+          @click="switchShuffle"
+        >
+          <svg-icon icon-class="shuffle" />
+        </button>
+        <button
+          v-if="settings.enableReversedMode"
+          class="ctl ctl-aux"
+          :class="{ active: player.reversed }"
+          :title="$t('player.reversed')"
+          @click="switchReversed"
+        >
+          <svg-icon icon-class="sort-up" />
+        </button>
+        <div class="volume">
+          <button class="ctl ctl-aux" :title="$t('player.mute')" @click="mute">
+            <svg-icon v-show="volume > 0.5" icon-class="volume" />
+            <svg-icon v-show="volume === 0" icon-class="volume-mute" />
+            <svg-icon
+              v-show="volume <= 0.5 && volume !== 0"
+              icon-class="volume-half"
+            />
+          </button>
+          <div class="volume-bar">
+            <vue-slider
+              v-model="volume"
+              :min="0"
+              :max="1"
+              :interval="0.01"
+              :drag-on-click="true"
+              :duration="0"
+              tooltip="none"
+              :dot-size="10"
+              :height="2"
+            ></vue-slider>
+          </div>
         </div>
+        <button
+          class="ctl ctl-aux ctl-lyrics"
+          :title="$t('player.lyrics') || 'Lyrics'"
+          @click="toggleLyrics"
+        >
+          <svg-icon icon-class="arrow-up" />
+        </button>
       </div>
     </div>
   </div>
@@ -169,7 +194,6 @@
 import { mapState, mapMutations, mapActions } from 'vuex';
 import '@/assets/css/slider.css';
 
-import ButtonIcon from '@/components/ButtonIcon.vue';
 import VueSlider from 'vue-3-slider-component';
 import { goToListSource, hasListSource } from '@/utils/playList';
 import { formatTrackTime } from '@/utils/common';
@@ -178,18 +202,15 @@ import { resizeImage } from '@/utils/filters';
 export default {
   name: 'Player',
   components: {
-    ButtonIcon,
     VueSlider,
-  },
-  data() {
-    return {
-      mouseDownTarget: null,
-    };
   },
   computed: {
     ...mapState(['player', 'settings', 'data']),
     currentTrack() {
       return this.player.currentTrack;
+    },
+    hasTrack() {
+      return !!(this.currentTrack && this.currentTrack.id);
     },
     volume: {
       get() {
@@ -198,9 +219,6 @@ export default {
       set(value) {
         this.player.volume = value;
       },
-    },
-    playing() {
-      return this.player.playing;
     },
     audioSource() {
       return this.player._howler?._src.includes('kuwo.cn')
@@ -219,14 +237,6 @@ export default {
     ...mapMutations(['toggleLyrics']),
     ...mapActions(['showToast', 'likeATrack']),
     resizeImage,
-    handleClick(event) {
-      if (event.target == this.mouseDownTarget) {
-        this.toggleLyrics();
-      }
-    },
-    handleMouseDown(event) {
-      this.mouseDownTarget = event.target;
-    },
     playPrevTrack() {
       this.player.playPrevTrack();
     },
@@ -251,7 +261,8 @@ export default {
       goToListSource();
     },
     goToAlbum() {
-      if (this.player.currentTrack.al.id === 0) return;
+      if (!this.player.currentTrack.al || this.player.currentTrack.al.id === 0)
+        return;
       this.$router.push({ path: '/album/' + this.player.currentTrack.al.id });
     },
     goToArtist(id) {
@@ -269,24 +280,22 @@ export default {
     mute() {
       this.player.mute();
     },
-
     setupMediaControls() {
       if ('mediaSession' in navigator) {
-        navigator.mediaSession.setActionHandler('play', () => {
-          this.playOrPause();
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-          this.playOrPause();
-        });
-        navigator.mediaSession.setActionHandler('previoustrack', () => {
-          this.playPrevTrack();
-        });
-        navigator.mediaSession.setActionHandler('nexttrack', () => {
-          this.playNextTrack();
-        });
+        navigator.mediaSession.setActionHandler('play', () =>
+          this.playOrPause()
+        );
+        navigator.mediaSession.setActionHandler('pause', () =>
+          this.playOrPause()
+        );
+        navigator.mediaSession.setActionHandler('previoustrack', () =>
+          this.playPrevTrack()
+        );
+        navigator.mediaSession.setActionHandler('nexttrack', () =>
+          this.playNextTrack()
+        );
       }
     },
-
     handleKeydown(event) {
       switch (event.code) {
         case 'MediaPlayPause':
@@ -307,173 +316,327 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.player {
+.tape-compartment {
   position: fixed;
   bottom: 0;
   right: 0;
   left: 0;
+  height: var(--shell-bottom);
+  z-index: 100;
+  background: var(--tape-orange);
+  color: var(--tape-orange-ink);
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
-  height: 64px;
-  backdrop-filter: saturate(180%) blur(30px);
-  // background-color: rgba(255, 255, 255, 0.86);
-  background-color: var(--color-navbar-bg);
-  z-index: 100;
-}
+  transition: filter var(--motion-slow) var(--ease-out);
 
-@supports (-moz-appearance: none) {
-  .player {
-    background-color: var(--color-body-bg);
+  &.idle {
+    filter: saturate(0.55);
   }
 }
 
-.progress-bar {
-  margin-top: -6px;
-  margin-bottom: -6px;
-  width: 100%;
+/* Top-edge seek rail. The vue-slider is overlaid so the whole top 4px
+   is clickable while the visible rail line is 2px tall. */
+.seek-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+
+  :deep(.vue-slider) {
+    width: 100% !important;
+    height: 4px !important;
+    padding: 0 !important;
+    background: transparent;
+  }
+
+  :deep(.vue-slider-rail) {
+    background: oklch(20% 0.04 38 / 0.35) !important;
+    border-radius: 0 !important;
+    height: 2px !important;
+    margin-top: 1px;
+  }
+
+  :deep(.vue-slider-process) {
+    background: var(--tape-orange-ink) !important;
+    border-radius: 0 !important;
+  }
+
+  :deep(.vue-slider-dot) {
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--ease-out);
+  }
+
+  :deep(.vue-slider-dot-handle) {
+    background: var(--tape-orange-ink) !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  &:hover :deep(.vue-slider-dot) {
+    opacity: 1;
+  }
 }
 
-.controls {
+.compartment-row {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  height: 100%;
-  padding: {
-    right: 10vw;
-    left: 10vw;
-  }
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  padding: 0 calc(var(--shell-pad-x) - 4vw);
+  gap: 24px;
 }
 
 @media (max-width: 1336px) {
-  .controls {
-    padding: 0 5vw;
+  .compartment-row {
+    padding: 0 calc(var(--shell-pad-x) - 2vw);
   }
 }
 
-.blank {
-  flex-grow: 1;
+@media (max-width: 970px) {
+  .compartment-row {
+    padding: 0 16px;
+    gap: 12px;
+  }
 }
 
-.playing {
-  display: flex;
-}
-
-.playing .container {
+/* ------ LEFT: now-playing block ------ */
+.block-now {
   display: flex;
   align-items: center;
-  img {
-    height: 46px;
-    border-radius: 5px;
-    box-shadow: 0 6px 8px -2px rgba(0, 0, 0, 0.16);
-    cursor: pointer;
-    user-select: none;
-  }
-  .track-info {
-    height: 46px;
-    margin-left: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    .name {
-      font-weight: 600;
-      font-size: 16px;
-      opacity: 0.88;
-      color: var(--color-text);
-      margin-bottom: 4px;
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
-      overflow: hidden;
-      word-break: break-all;
-    }
-    .has-list {
-      cursor: pointer;
-      &:hover {
-        text-decoration: underline;
-      }
-    }
-    .artist {
-      font-size: 12px;
-      opacity: 0.58;
-      color: var(--color-text);
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
-      overflow: hidden;
-      word-break: break-all;
-      span.ar {
-        cursor: pointer;
-        &:hover {
-          text-decoration: underline;
-        }
-      }
-    }
-  }
+  gap: 14px;
+  min-width: 0;
 }
 
-.middle-control-buttons {
+.cover-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: oklch(20% 0.04 38 / 0.35);
+  border: 1px solid oklch(96% 0.005 60 / 0.18);
   display: flex;
-}
-
-.middle-control-buttons .container {
-  flex: 1;
-  display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
-  padding: 0 8px;
-  .button-icon {
-    margin: 0 8px;
-  }
-  .play {
-    height: 42px;
-    width: 42px;
-    :deep(.svg-icon) {
-      width: 24px;
-      height: 24px;
-    }
-  }
-}
+  flex-shrink: 0;
+  padding: 0;
+  cursor: pointer;
+  transition: transform var(--motion-fast) var(--ease-out);
 
-.right-control-buttons {
-  display: flex;
-}
-
-.right-control-buttons .container {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  .expand {
-    margin-left: 24px;
-    :deep(.svg-icon) {
-      height: 24px;
-      width: 24px;
-    }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
-  .active :deep(.svg-icon) {
-    color: var(--color-primary);
-  }
-  .volume-control {
-    margin-left: 4px;
-    display: flex;
-    align-items: center;
-    .volume-bar {
-      width: 84px;
-    }
-  }
-}
 
-.like-button {
-  margin-left: 16px;
-}
+  .cover-empty {
+    color: var(--tape-orange-ink);
+    opacity: 0.7;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+  }
 
-.button-icon.disabled {
-  cursor: default;
-  opacity: 0.38;
   &:hover {
-    background: none;
+    transform: scale(1.04);
   }
+}
+
+.track-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.track-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--tape-orange-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.linkable {
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &.idle-prompt {
+    opacity: 0.7;
+    font-weight: 500;
+  }
+}
+
+.track-line {
+  font-size: 0.8125rem;
+  color: var(--tape-orange-ink);
+  opacity: 0.78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .dot-sep {
+    opacity: 0.5;
+  }
+
+  .linkable {
+    cursor: pointer;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .mono-stamp {
+    color: var(--tape-orange-ink);
+    opacity: 0.65;
+    letter-spacing: 0.12em;
+  }
+}
+
+/* ------ CENTER: transport ------ */
+.block-transport {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  justify-self: center;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ctl {
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--tape-orange-ink);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    transform 90ms var(--ease-out);
+
+  :deep(.svg-icon) {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: oklch(20% 0.04 38 / 0.18);
+  }
+
   &:active {
-    transform: unset;
+    transform: scale(0.92);
+  }
+
+  &.active {
+    background: oklch(20% 0.04 38 / 0.22);
+  }
+}
+
+.ctl-play {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--tape-orange-ink);
+  color: var(--tape-orange);
+
+  :deep(.svg-icon) {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: var(--tape-orange-ink);
+    transform: scale(1.04);
+  }
+}
+
+.ctl-aux {
+  width: 30px;
+  height: 30px;
+
+  :deep(.svg-icon) {
+    width: 15px;
+    height: 15px;
+    opacity: 0.85;
+  }
+
+  &.active :deep(.svg-icon) {
+    opacity: 1;
+  }
+}
+
+.ctl-lyrics {
+  margin-left: 4px;
+}
+
+.timecode {
+  display: flex;
+  gap: 4px;
+  color: var(--tape-orange-ink);
+  opacity: 0.7;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+
+  .time-sep {
+    opacity: 0.5;
+  }
+}
+
+/* ------ RIGHT: aux controls + volume ------ */
+.block-aux {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 2px 0 6px;
+}
+
+.volume-bar {
+  width: 70px;
+
+  :deep(.vue-slider) {
+    width: 70px !important;
+  }
+
+  :deep(.vue-slider-rail) {
+    background: oklch(20% 0.04 38 / 0.3) !important;
+  }
+
+  :deep(.vue-slider-process) {
+    background: var(--tape-orange-ink) !important;
+  }
+
+  :deep(.vue-slider-dot-handle) {
+    background: var(--tape-orange-ink) !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 970px) {
+  .volume-bar {
+    display: none;
   }
 }
 </style>

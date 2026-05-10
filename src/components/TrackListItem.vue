@@ -254,7 +254,7 @@ button {
   .svg-icon {
     height: 16px;
     width: 16px;
-    color: var(--color-primary);
+    color: var(--ink-soft);
   }
   &:hover {
     transform: scale(1.12);
@@ -376,20 +376,22 @@ button {
   }
   .time,
   .count {
-    font-size: 16px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
     width: 50px;
     cursor: default;
     display: flex;
     justify-content: flex-end;
     margin-right: 10px;
     font-variant-numeric: tabular-nums;
-    opacity: 0.88;
-    color: var(--color-text);
+    color: var(--ink-soft);
   }
   .count {
-    font-weight: bold;
-    font-size: 22px;
-    line-height: 22px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 18px;
+    color: var(--ink-mid);
   }
 }
 

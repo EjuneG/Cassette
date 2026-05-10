@@ -23,12 +23,12 @@
       </router-view>
     </main>
     <transition name="slide-up">
-      <Player v-if="enablePlayer" v-show="showPlayer" ref="player" />
+      <Player v-show="showPlayer" ref="player" />
     </transition>
     <Toast />
     <ModalAddTrackToPlaylist v-if="isAccountLoggedIn" />
     <ModalNewPlaylist v-if="isAccountLoggedIn" />
-    <transition v-if="enablePlayer" name="slide-up">
+    <transition name="slide-up">
       <Lyrics v-show="showLyrics" />
     </transition>
   </div>
@@ -89,9 +89,6 @@ export default {
         ) === false
       );
     },
-    enablePlayer() {
-      return this.player.enabled;
-    },
     showNavbar() {
       return true;
     },
@@ -142,15 +139,10 @@ main {
   right: 0;
   left: 0;
   overflow: auto;
-  padding: 64px 10vw 96px 10vw;
+  padding: var(--shell-top) var(--shell-pad-x) calc(var(--shell-bottom) + 16px)
+    var(--shell-pad-x);
   box-sizing: border-box;
   scrollbar-width: none; // firefox
-}
-
-@media (max-width: 1336px) {
-  main {
-    padding: 64px 5vw 96px 5vw;
-  }
 }
 
 main::-webkit-scrollbar {
@@ -159,7 +151,7 @@ main::-webkit-scrollbar {
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: transform 0.4s;
+  transition: transform var(--motion-slow) var(--ease-out);
 }
 .slide-up-enter-from,
 .slide-up-leave-to {

@@ -177,10 +177,8 @@ export default {
   }
 }
 
-[data-theme='dark'] {
-  #thumbContainer div {
-    background: var(--color-secondary-bg);
-  }
+#thumbContainer div {
+  background: var(--color-secondary-bg);
 }
 
 #scrollbar.on-drag {

@@ -9,6 +9,8 @@ export default {
     library: '音樂庫',
     search: '搜尋',
     github: 'GitHub Repo',
+    back: '上一頁',
+    forward: '下一頁',
   },
   home: {
     newAlbum: '新曲上架',
@@ -103,8 +105,13 @@ export default {
     pause: '暫停',
     mute: '靜音',
     nextUp: '播放清單',
+    lyrics: '歌詞',
+    idlePrompt: '選一首歌',
     translationLyric: '歌詞(譯)',
     PronunciationLyric: '歌詞(音)',
+  },
+  lyrics: {
+    empty: '此曲目暫無歌詞。',
   },
   modal: {
     close: '關閉',

@@ -9,6 +9,8 @@ export default {
     library: '音乐库',
     search: '搜索',
     github: 'GitHub 仓库',
+    back: '后退',
+    forward: '前进',
   },
   home: {
     newAlbum: '新专速递',
@@ -107,8 +109,13 @@ export default {
     pause: '暂停',
     mute: '静音',
     nextUp: '播放列表',
+    lyrics: '歌词',
+    idlePrompt: '选一首歌',
     translationLyric: '歌词(译)',
     PronunciationLyric: '歌词(音)',
+  },
+  lyrics: {
+    empty: '该曲目暂无歌词。',
   },
   modal: {
     close: '关闭',

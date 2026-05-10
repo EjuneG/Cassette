@@ -3,42 +3,38 @@
     <nav :class="{ 'has-custom-titlebar': hasCustomTitlebar }">
       <Win32Titlebar v-if="enableWin32Titlebar" />
       <LinuxTitlebar v-if="enableLinuxTitlebar" />
-      <div class="navigation-buttons">
-        <button-icon @click="go('back')"
+      <div class="nav-left">
+        <button-icon
+          class="nav-button"
+          :title="$t('nav.back') || 'Back'"
+          @click="go('back')"
           ><svg-icon icon-class="arrow-left"
         /></button-icon>
-        <button-icon @click="go('forward')"
+        <button-icon
+          class="nav-button"
+          :title="$t('nav.forward') || 'Forward'"
+          @click="go('forward')"
           ><svg-icon icon-class="arrow-right"
         /></button-icon>
       </div>
-      <div class="navigation-links">
-        <router-link to="/" :class="{ active: $route.name === 'library' }">{{
-          $t('nav.library')
-        }}</router-link>
-      </div>
-      <div class="right-part">
-        <div class="search-box">
-          <div class="container" :class="{ active: inputFocus }">
-            <svg-icon icon-class="search" />
-            <div class="input">
-              <input
-                ref="searchInput"
-                v-model="keywords"
-                type="search"
-                :placeholder="inputFocus ? '' : $t('nav.search')"
-                @keydown.enter="doSearch"
-                @focus="inputFocus = true"
-                @blur="inputFocus = false"
-              />
-            </div>
-          </div>
+
+      <div class="nav-right">
+        <div class="search-box" :class="{ active: inputFocus }">
+          <svg-icon icon-class="search" />
+          <input
+            ref="searchInput"
+            v-model="keywords"
+            type="search"
+            :placeholder="$t('nav.search')"
+            @keydown.enter="doSearch"
+            @focus="inputFocus = true"
+            @blur="inputFocus = false"
+          />
+          <span v-if="!inputFocus" class="search-hint mono-stamp">/</span>
         </div>
-        <img
-          class="avatar"
-          :src="avatarUrl"
-          @click="showUserProfileMenu"
-          loading="lazy"
-        />
+        <button class="avatar-button" @click="showUserProfileMenu">
+          <img class="avatar" :src="avatarUrl" loading="lazy" />
+        </button>
       </div>
     </nav>
 
@@ -68,8 +64,6 @@
 import { mapState } from 'vuex';
 import { isLooseLoggedIn, doLogout } from '@/utils/auth';
 
-// import icons for win32 title bar
-// icons by https://github.com/microsoft/vscode-codicons
 import 'vscode-codicons/dist/codicon.css';
 
 import Win32Titlebar from '@/components/Win32Titlebar.vue';
@@ -88,7 +82,6 @@ export default {
   data() {
     return {
       inputFocus: false,
-      langs: ['zh-CN', 'zh-TW', 'en', 'tr'],
       keywords: '',
       enableWin32Titlebar: false,
       enableLinuxTitlebar: false,
@@ -117,6 +110,10 @@ export default {
     ) {
       this.enableLinuxTitlebar = true;
     }
+    window.addEventListener('keydown', this.handleGlobalKeydown);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleGlobalKeydown);
   },
   methods: {
     go(where) {
@@ -157,6 +154,12 @@ export default {
         this.$router.push({ name: 'login' });
       }
     },
+    handleGlobalKeydown(e) {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        this.$refs.searchInput?.focus();
+      }
+    },
   },
 };
 </script>
@@ -170,170 +173,135 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 64px;
-  padding: {
-    right: 10vw;
-    left: 10vw;
-  }
-  backdrop-filter: saturate(180%) blur(20px);
-
-  background-color: var(--color-navbar-bg);
+  height: var(--shell-top);
+  padding: 0 var(--shell-pad-x);
+  background-color: var(--housing-base);
+  border-bottom: 1px solid var(--housing-hairline);
   z-index: 100;
   -webkit-app-region: drag;
 }
 
-@media (max-width: 1336px) {
-  nav {
-    padding: 0 max(5vw, 90px);
-  }
-}
-
-@supports (-moz-appearance: none) {
-  nav {
-    background-color: var(--color-body-bg);
-  }
-}
-
 nav.has-custom-titlebar {
   padding-top: 20px;
+  height: calc(var(--shell-top) + 20px);
   -webkit-app-region: no-drag;
 }
 
-.navigation-buttons {
-  flex: 1;
+.nav-left,
+.nav-right {
   display: flex;
   align-items: center;
-  :deep(.svg-icon) {
-    height: 24px;
-    width: 24px;
-  }
-  button {
-    -webkit-app-region: no-drag;
-  }
-}
-@media (max-width: 970px) {
-  .navigation-buttons {
-    flex: unset;
-  }
 }
 
-.navigation-links {
-  flex: 1;
+.nav-left {
+  gap: 4px;
+}
+
+.nav-button {
+  -webkit-app-region: no-drag;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
+  align-items: center;
   justify-content: center;
-  text-transform: uppercase;
-  user-select: none;
-  a {
-    -webkit-app-region: no-drag;
-    font-size: 18px;
-    font-weight: 700;
-    text-decoration: none;
-    border-radius: 6px;
-    padding: 6px 10px;
-    color: var(--color-text);
-    transition: 0.2s;
-    -webkit-user-drag: none;
-    margin: {
-      right: 12px;
-      left: 12px;
-    }
-    &:hover {
-      background: var(--color-secondary-bg-for-transparent);
-    }
-    &:active {
-      transform: scale(0.92);
-      transition: 0.2s;
-    }
+  color: var(--ink-soft);
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+
+  &:hover {
+    background: var(--housing-elev);
+    color: var(--ink-strong);
   }
-  a.active {
-    color: var(--color-primary);
+
+  :deep(.svg-icon) {
+    width: 16px;
+    height: 16px;
   }
 }
 
-.search {
-  :deep(.svg-icon) {
-    height: 18px;
-    width: 18px;
-  }
+.nav-right {
+  gap: 12px;
 }
 
 .search-box {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  width: 220px;
+  background: var(--housing-elev);
+  border: 1px solid transparent;
+  border-radius: 6px;
   -webkit-app-region: no-drag;
-
-  .container {
-    display: flex;
-    align-items: center;
-    height: 32px;
-    background: var(--color-secondary-bg-for-transparent);
-    border-radius: 8px;
-    width: 200px;
-  }
+  transition: border-color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
 
   :deep(.svg-icon) {
-    height: 15px;
-    width: 15px;
-    color: var(--color-text);
-    opacity: 0.28;
-    margin: {
-      left: 8px;
-      right: 4px;
-    }
+    width: 13px;
+    height: 13px;
+    color: var(--ink-soft);
+    flex-shrink: 0;
   }
 
   input {
-    font-size: 16px;
+    flex: 1;
     border: none;
     background: transparent;
-    width: 96%;
-    font-weight: 600;
-    margin-top: -1px;
-    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-strong);
+    width: 100%;
+
+    &::placeholder {
+      color: var(--ink-soft);
+      font-weight: 500;
+    }
   }
 
-  .active {
-    background: var(--color-primary-bg-for-transparent);
-    input,
+  .search-hint {
+    color: var(--ink-faint);
+    background: var(--housing-base);
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--housing-hairline);
+    font-size: 0.6875rem;
+    line-height: 1;
+  }
+
+  &.active {
+    background: var(--housing-elev);
+    border-color: var(--housing-divider);
+
     :deep(.svg-icon) {
-      opacity: 1;
-      color: var(--color-primary);
+      color: var(--ink-strong);
     }
   }
 }
 
-[data-theme='dark'] {
-  .search-box {
-    .active {
-      input,
-      :deep(.svg-icon) {
-        color: var(--color-text);
-      }
-    }
-  }
-}
-
-.right-part {
-  flex: 1;
+.avatar-button {
+  -webkit-app-region: no-drag;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
+  transition: transform var(--motion-fast) var(--ease-out);
+
   .avatar {
-    user-select: none;
-    height: 30px;
-    margin-left: 12px;
-    vertical-align: -7px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    cursor: pointer;
-    -webkit-app-region: no-drag;
+    border: 1px solid var(--housing-hairline);
     -webkit-user-drag: none;
-    &:hover {
-      filter: brightness(80%);
-    }
+    user-select: none;
   }
-  .search-button {
-    display: none;
-    -webkit-app-region: no-drag;
+
+  &:hover {
+    transform: scale(1.06);
   }
 }
 </style>

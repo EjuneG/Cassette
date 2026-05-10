@@ -109,7 +109,7 @@ export default {
     }
   }
 }
-[data-theme='dark'] .win32-titlebar {
+.win32-titlebar {
   --hover: #191919;
   --active: #333333;
 }

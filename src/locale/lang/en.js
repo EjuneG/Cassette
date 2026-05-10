@@ -9,6 +9,8 @@ export default {
     library: 'Library',
     search: 'Search',
     github: 'GitHub Repo',
+    back: 'Back',
+    forward: 'Forward',
   },
   footer: {
     settings: 'Settings',
@@ -106,8 +108,13 @@ export default {
     pause: 'Pause',
     mute: 'Mute',
     nextUp: 'Next Up',
+    lyrics: 'Lyrics',
+    idlePrompt: 'Pick a track',
     translationLyric: 'lyric (trans)',
     PronunciationLyric: 'lyric (pronounce)',
+  },
+  lyrics: {
+    empty: 'No lyrics for this track.',
   },
   modal: {
     close: 'Close',

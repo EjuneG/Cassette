@@ -69,8 +69,8 @@ button {
   font-size: 18px;
   line-height: 18px;
   font-weight: 600;
-  background-color: var(--color-primary-bg);
-  color: var(--color-primary);
+  background-color: var(--housing-elev);
+  color: var(--ink-strong);
   margin-right: 12px;
   transition: 0.2s;
   user-select: none;
@@ -84,6 +84,10 @@ button {
   &:active {
     transform: scale(0.94);
   }
+}
+button.orange {
+  background-color: var(--tape-orange-soft);
+  color: var(--tape-orange);
 }
 button.grey {
   background-color: var(--color-secondary-bg);

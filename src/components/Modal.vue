@@ -166,8 +166,8 @@ export default {
     }
   }
   button.primary {
-    color: var(--color-primary-bg);
-    background: var(--color-primary);
+    color: var(--ink-strong);
+    background: var(--housing-elev);
     font-weight: 500;
   }
   button.block {
@@ -179,15 +179,13 @@ export default {
   }
 }
 
-[data-theme='dark'] {
-  .shade {
-    background: rgba(0, 0, 0, 0.38);
-    color: var(--color-text);
-  }
+.shade {
+  background: rgba(0, 0, 0, 0.38);
+  color: var(--color-text);
+}
 
-  .modal {
-    background: rgba(36, 36, 36, 0.88);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
+.modal {
+  background: rgba(36, 36, 36, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 </style>

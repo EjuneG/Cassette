@@ -118,7 +118,7 @@ export default {
     }
   }
 }
-[data-theme='dark'] .linux-titlebar {
+.linux-titlebar {
   --hover: #191919;
   --active: #333333;
 }

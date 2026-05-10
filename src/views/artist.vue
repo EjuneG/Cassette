@@ -24,7 +24,11 @@
           {{ artist.briefDesc }}
         </div>
         <div class="buttons">
-          <ButtonTwoTone icon-class="play" @click="playPopularSongs()">
+          <ButtonTwoTone
+            icon-class="play"
+            color="orange"
+            @click="playPopularSongs()"
+          >
             {{ $t('common.play') }}
           </ButtonTwoTone>
           <ButtonTwoTone color="grey" @click="followArtist">
@@ -376,40 +380,49 @@ export default {
 
 <style lang="scss" scoped>
 .artist-page {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .artist-info {
   display: flex;
   align-items: center;
-  margin-bottom: 26px;
-  color: var(--color-text);
+  margin-bottom: 24px;
+  color: var(--ink-strong);
+  gap: 28px;
   img {
-    height: 248px;
-    width: 248px;
+    height: 160px;
+    width: 160px;
     border-radius: 50%;
-    margin-right: 56px;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 12px 16px -8px;
+    border: 1px solid var(--housing-hairline);
   }
   .name {
-    font-size: 56px;
+    font-size: 1.625rem;
     font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
   }
 
   .artist {
-    font-size: 18px;
-    opacity: 0.88;
-    margin-top: 24px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 8px;
   }
 
   .statistics {
-    font-size: 14px;
-    opacity: 0.68;
-    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
   }
 
   .buttons {
-    margin-top: 26px;
+    margin-top: 16px;
     display: flex;
     .shuffle {
       padding: 8px 11px;
@@ -421,9 +434,9 @@ export default {
 
   .description {
     user-select: none;
-    font-size: 14px;
-    opacity: 0.68;
-    margin-top: 24px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    margin-top: 12px;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;

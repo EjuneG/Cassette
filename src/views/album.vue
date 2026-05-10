@@ -5,9 +5,9 @@
         :id="album.id"
         :image-url="resizeImage(album.picUrl, 1024)"
         :show-play-button="true"
-        :always-show-shadow="true"
+        :always-show-shadow="false"
         :click-cover-to-play="true"
-        :fixed-size="288"
+        :fixed-size="192"
         type="album"
         :cover-hover="false"
         :play-button-size="18"
@@ -44,18 +44,18 @@
           {{ album.description }}
         </div>
         <div class="buttons" style="margin-top: 32px">
-          <ButtonTwoTone icon-class="play" @click="playAlbumByID(album.id)">
+          <ButtonTwoTone
+            icon-class="play"
+            color="orange"
+            @click="playAlbumByID(album.id)"
+          >
             {{ $t('common.play') }}
           </ButtonTwoTone>
           <ButtonTwoTone
             :icon-class="dynamicDetail.isSub ? 'heart-solid' : 'heart'"
             :icon-button="true"
             :horizontal-padding="0"
-            :color="dynamicDetail.isSub ? 'blue' : 'grey'"
-            :text-color="dynamicDetail.isSub ? '#335eea' : ''"
-            :background-color="
-              dynamicDetail.isSub ? 'var(--color-secondary-bg)' : ''
-            "
+            color="grey"
             @click="likeAlbum"
           >
           </ButtonTwoTone>
@@ -338,45 +338,56 @@ export default {
 
 <style lang="scss" scoped>
 .album-page {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 .playlist-info {
   display: flex;
+  align-items: flex-start;
   width: 78vw;
-  margin-bottom: 72px;
+  margin-bottom: 36px;
+  gap: 28px;
   .info {
     display: flex;
     flex-direction: column;
     justify-content: center;
     flex: 1;
-    margin-left: 56px;
-    color: var(--color-text);
+    color: var(--ink-strong);
+    min-width: 0;
     .title {
-      font-size: 56px;
+      font-size: 1.625rem;
       font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
     }
     .subtitle {
-      font-size: 22px;
-      font-weight: 600;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink-mid);
+      margin-top: 4px;
     }
     .artist {
-      font-size: 18px;
-      opacity: 0.88;
-      margin-top: 24px;
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-top: 12px;
       a {
         font-weight: 600;
+        color: var(--ink-strong);
       }
     }
     .date-and-count {
-      font-size: 14px;
-      opacity: 0.68;
-      margin-top: 2px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-top: 6px;
+      font-variant-numeric: tabular-nums;
     }
     .description {
       user-select: none;
-      font-size: 14px;
-      opacity: 0.68;
-      margin-top: 24px;
+      font-size: 13px;
+      color: var(--ink-mid);
+      margin-top: 14px;
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 3;
@@ -384,15 +395,15 @@ export default {
       cursor: pointer;
       white-space: pre-line;
       &:hover {
-        transition: opacity 0.3s;
-        opacity: 0.88;
+        color: var(--ink-strong);
+        transition: color var(--motion-base) var(--ease-out);
       }
     }
     .buttons {
-      margin-top: 32px;
+      margin-top: 24px;
       display: flex;
       button {
-        margin-right: 16px;
+        margin-right: 12px;
       }
     }
   }

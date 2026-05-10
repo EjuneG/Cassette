@@ -9,6 +9,8 @@ export default {
     library: 'Kitaplık',
     search: 'Ara',
     github: 'GitHub Repo',
+    back: 'Geri',
+    forward: 'İleri',
   },
   footer: {
     settings: 'Ayarlar',
@@ -101,8 +103,13 @@ export default {
     pause: 'Durdur',
     mute: 'Sesi kapat',
     nextUp: 'Sıradaki',
+    lyrics: 'Şarkı Sözleri',
+    idlePrompt: 'Bir parça seç',
     translationLyric: 'şarkı sözleri (çeviri)',
     PronunciationLyric: 'şarkı sözleri (çeviri)',
+  },
+  lyrics: {
+    empty: 'Bu parça için şarkı sözü yok.',
   },
   modal: {
     close: 'Kapat',

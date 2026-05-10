@@ -31,10 +31,11 @@ export default {
   },
   methods: {
     setMenu(top, left) {
-      let heightOffset = this.player.enabled ? 64 : 0;
-      let largestHeight =
+      // Leave room for the 88px tape compartment.
+      const heightOffset = 96;
+      const largestHeight =
         window.innerHeight - this.$refs.menu.offsetHeight - heightOffset;
-      let largestWidth = window.innerWidth - this.$refs.menu.offsetWidth - 25;
+      const largestWidth = window.innerWidth - this.$refs.menu.offsetWidth - 24;
       if (top > largestHeight) top = largestHeight;
       if (left > largestWidth) left = largestWidth;
       this.top = top + 'px';
@@ -71,105 +72,110 @@ export default {
 
 .menu {
   position: fixed;
-  min-width: 136px;
-  max-width: 240px;
+  min-width: 184px;
+  max-width: 280px;
   list-style: none;
-  background: rgba(255, 255, 255, 0.88);
-  box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(12px);
-  border-radius: 12px;
-  box-sizing: border-box;
+  background: var(--housing-elev);
+  border: 1px solid var(--housing-divider);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px -12px oklch(0% 0 0 / 0.32),
+    0 2px 4px -2px oklch(0% 0 0 / 0.18);
   padding: 6px;
+  box-sizing: border-box;
   z-index: 1000;
   -webkit-app-region: no-drag;
-  transition: background 125ms ease-out, opacity 125ms ease-out,
-    transform 125ms ease-out;
 
   &:focus {
     outline: none;
   }
 }
 
-[data-theme='dark'] {
-  .menu {
-    background: rgba(36, 36, 36, 0.78);
-    backdrop-filter: blur(16px) contrast(120%) brightness(60%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.08);
-  }
-  .menu .item:hover {
-    color: var(--color-primary);
-    background: var(--color-primary-bg-for-transparent);
-  }
-}
+/* Slot-content styles must reach across scoped boundary with :deep(). */
 
-@supports (-moz-appearance: none) {
-  .menu {
-    background-color: var(--color-body-bg) !important;
-  }
-}
-
-.menu .item {
-  font-weight: 600;
-  font-size: 14px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: default;
-  color: var(--color-text);
+.menu :deep(.item) {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--ink-strong);
   display: flex;
   align-items: center;
+  gap: 8px;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+
+  .svg-icon {
+    height: 14px;
+    width: 14px;
+    color: var(--ink-soft);
+  }
+
   &:hover {
-    color: var(--color-primary);
-    background: var(--color-primary-bg-for-transparent);
-    transition: opacity 125ms ease-out, transform 125ms ease-out;
+    background: var(--housing-elev);
+    color: var(--ink-strong);
+
+    .svg-icon {
+      color: var(--ink-strong);
+    }
   }
+
   &:active {
-    opacity: 0.75;
-    transform: scale(0.95);
-  }
-
-  :deep(.svg-icon) {
-    height: 16px;
-    width: 16px;
-    margin-right: 5px;
+    background: var(--housing-divider);
   }
 }
 
-hr {
-  margin: 4px 10px;
-  background: rgba(128, 128, 128, 0.18);
+.menu :deep(hr) {
+  margin: 4px 6px;
   height: 1px;
-  box-shadow: none;
+  background: var(--housing-divider);
   border: none;
+  opacity: 0.6;
 }
 
-.item-info {
-  padding: 10px 10px;
+/* The track-preview header that some menus put at the top. */
+.menu :deep(.item-info) {
+  padding: 8px 10px 10px;
   display: flex;
   align-items: center;
-  color: var(--color-text);
+  gap: 10px;
+  color: var(--ink-strong);
   cursor: default;
+  user-select: none;
+
   img {
-    height: 38px;
-    width: 38px;
+    height: 44px !important;
+    width: 44px !important;
     border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid var(--housing-hairline);
+    flex-shrink: 0;
   }
+
   .info {
-    margin-left: 10px;
+    min-width: 0;
+    flex: 1;
   }
+
   .title {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
+    color: var(--ink-strong);
+    line-height: 1.25;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
     overflow: hidden;
     word-break: break-all;
   }
+
   .subtitle {
-    font-size: 12px;
-    opacity: 0.68;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+    margin-top: 2px;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;

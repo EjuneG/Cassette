@@ -134,9 +134,6 @@ export default {
         background: var(--color-primary-bg-for-transparent);
         opacity: 1;
       }
-      [data-theme='light'] &:focus {
-        color: var(--color-primary);
-      }
     }
     .checkbox {
       input[type='checkbox' i] {

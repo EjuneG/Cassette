@@ -29,6 +29,18 @@ db.version(1).stores({
 });
 
 let tracksCacheBytes = 0;
+let cacheBytesReady = null;
+
+function ensureCacheBytesLoaded() {
+  if (cacheBytesReady) return cacheBytesReady;
+  cacheBytesReady = countDBSize()
+    .then(() => {})
+    .catch(err => {
+      console.debug('[debug][db.js] init tracksCacheBytes failed', err);
+      cacheBytesReady = null;
+    });
+  return cacheBytesReady;
+}
 
 async function deleteExcessCache() {
   if (
@@ -52,6 +64,7 @@ async function deleteExcessCache() {
 
 export function cacheTrackSource(trackInfo, url, bitRate, from = 'netease') {
   if (!process.env.IS_ELECTRON) return;
+  const sizeReady = ensureCacheBytesLoaded();
   const name = trackInfo.name;
   const artist =
     (trackInfo.ar && trackInfo.ar[0]?.name) ||
@@ -68,7 +81,7 @@ export function cacheTrackSource(trackInfo, url, bitRate, from = 'netease') {
     .get(url, {
       responseType: 'arraybuffer',
     })
-    .then(response => {
+    .then(async response => {
       db.trackSources.put({
         id: trackInfo.id,
         source: response.data,
@@ -79,6 +92,7 @@ export function cacheTrackSource(trackInfo, url, bitRate, from = 'netease') {
         createTime: new Date().getTime(),
       });
       console.debug(`[debug][db.js] cached track 👉 ${name} by ${artist}`);
+      await sizeReady;
       tracksCacheBytes += response.data.byteLength;
       deleteExcessCache();
       return { trackID: trackInfo.id, source: response.data, bitRate };
@@ -166,6 +180,7 @@ export function countDBSize() {
         length: trackSizes.length,
       };
       tracksCacheBytes = res.bytes;
+      cacheBytesReady = Promise.resolve();
       console.debug(
         `[debug][db.js] load tracksCacheBytes: ${tracksCacheBytes}`
       );
@@ -178,6 +193,8 @@ export function clearDB() {
     db.tables.forEach(function (table) {
       table.clear();
     });
+    tracksCacheBytes = 0;
+    cacheBytesReady = Promise.resolve();
     resolve();
   });
 }
