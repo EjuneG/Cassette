@@ -1,10 +1,14 @@
 // ============================================================
-// 部署 Worker 后把这两个常量填上即可启用上报
-// 留空 = 不启用（dev 时本地 console 还是会打错误）
+// Bug-reporter Worker config — values come from .env via VITE_REPORTER_*.
+// Leave the env vars empty to disable reporting (dev still logs to console).
+// Renderer build: Vite reads .env automatically.
+// Main-process build: scripts/build-electron.js loads .env and inlines
+// import.meta.env.VITE_REPORTER_* at bundle time.
+// Note: anything that reaches the deployed bundle is observable in DevTools,
+// so SHARED_SECRET is a soft anti-spam token — not a real secret.
 // ============================================================
-const WORKER_URL = 'https://yesplaymusic.shuaishuai614.workers.dev'; // e.g. 'https://ypm-reporter.xxx.workers.dev'
-const SHARED_SECRET =
-  '0e9a4bd9592e3da2f3332f37368b2dbbf195f76e25158e580fee1321badbfa19'; // 与 Worker 那边的 SHARED_SECRET 完全一致
+const WORKER_URL = import.meta.env.VITE_REPORTER_WORKER_URL || '';
+const SHARED_SECRET = import.meta.env.VITE_REPORTER_SECRET || '';
 
 const APP_VERSION = '0.5.2';
 

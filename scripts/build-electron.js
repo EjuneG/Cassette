@@ -3,7 +3,25 @@
  * Outputs to dist-electron/main.js
  */
 const esbuild = require('esbuild');
+const fs = require('fs');
 const path = require('path');
+
+// Lightweight .env loader — Vite handles this automatically for the renderer
+// build, but esbuild does not. We populate process.env from .env so that any
+// VITE_* keys can be inlined into the main-process bundle via define: below.
+function loadEnvFile(envPath) {
+  if (!fs.existsSync(envPath)) return;
+  const content = fs.readFileSync(envPath, 'utf-8');
+  for (const line of content.split(/\r?\n/)) {
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (!m) continue;
+    const [, key, rawValue] = m;
+    if (key in process.env) continue;
+    const value = rawValue.replace(/^['"]|['"]$/g, '');
+    process.env[key] = value;
+  }
+}
+loadEnvFile(path.resolve(__dirname, '../.env'));
 
 const ESBUILD_COMMON = {
   bundle: true,
@@ -31,6 +49,15 @@ const ESBUILD_COMMON = {
     'process.env.IS_ELECTRON': 'true',
     'process.env.NODE_ENV': JSON.stringify(
       process.env.NODE_ENV || 'production'
+    ),
+    // Mirror Vite's import.meta.env handling so shared modules (e.g.
+    // src/utils/errorReporter.js) resolve VITE_REPORTER_* the same way in
+    // both renderer and main builds.
+    'import.meta.env.VITE_REPORTER_WORKER_URL': JSON.stringify(
+      process.env.VITE_REPORTER_WORKER_URL || ''
+    ),
+    'import.meta.env.VITE_REPORTER_SECRET': JSON.stringify(
+      process.env.VITE_REPORTER_SECRET || ''
     ),
   },
   format: 'cjs',
