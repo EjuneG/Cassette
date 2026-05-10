@@ -103,6 +103,14 @@ const routes = [
     },
   },
   {
+    path: '/library/play-history',
+    name: 'playHistory',
+    component: () => import('@/views/playHistory.vue'),
+    meta: {
+      requireLogin: true,
+    },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/settings.vue'),
