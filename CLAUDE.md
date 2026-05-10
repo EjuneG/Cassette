@@ -6,6 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 YesPlayMusic — a third-party Netease Cloud Music (网易云音乐) player. Runs as both a web app and an Electron desktop client (macOS/Windows/Linux). Built with Vue 3 + Vuex 4 + Vue Router 4 + Howler.js + Vite + Electron 41.
 
+## Design Context
+
+UI work is governed by these root files (read before any visual change):
+
+- [`PRODUCT.md`](PRODUCT.md) — strategic: register=`product`, users, brand personality, anti-references, design principles.
+- [`DESIGN.md`](DESIGN.md) — visual system: **currently SEEDED** (placeholder tokens). Re-run `/impeccable document` once real tokens land in code to capture them.
+- [`.impeccable/shape-brief.md`](.impeccable/shape-brief.md) — **approved app-shell redesign brief** (Studio Cassette). Mid-fi spec, ASCII wireframes, token plan, interactions. **Ready for `/impeccable craft` implementation.**
+
+**Creative North Star**: *"The Studio Cassette"* — a piece of dedicated audio gear on a developer's desk. Muted neutral housing with a single saturated **Tape Orange-Red** block worn by the currently-active region (the bottom 88px tape compartment). Two-voice type (sans speaks, mono measures). No pure `#000` / `#fff`. Motion is response, not performance. Dark-first.
+
+**Anti-references**: Apple Music clone (backdrop-blur navbar, sky-blue accent), AI SaaS slop (purple gradients + Inter + nested cards), overwrought gamer UI (glow borders, scanlines).
+
+**Active redesign scope** (per shape-brief): Navbar (drop central tab), Library (drop "*** 的音乐库" title; reorganize into Side A / Side B; trim MV + CloudDisk + PlayHistory tabs), detail pages, Lyrics fullscreen (no more Apple Music–style backdrop blur), Settings (token-swap only). Personal FM removal: ✅ done. Next step: `/impeccable craft library` (or `/impeccable craft app-shell` for the full sandwich).
+
+For design tasks prefer `/impeccable <command>` — `craft`, `critique`, `polish`, `bolder`, `quieter`, etc. — so PRODUCT.md and DESIGN.md auto-load.
+
 ## Commands
 
 ```bash
