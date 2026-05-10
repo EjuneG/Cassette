@@ -146,7 +146,6 @@
             </div>
             <div class="media-controls">
               <button-icon
-                v-show="!player.isPersonalFM"
                 :title="
                   player.repeatMode === 'one'
                     ? $t('player.repeatTrack')
@@ -166,18 +165,10 @@
               </button-icon>
               <div class="middle">
                 <button-icon
-                  v-show="!player.isPersonalFM"
                   :title="$t('player.previous')"
                   @click="playPrevTrack"
                 >
                   <svg-icon icon-class="previous" />
-                </button-icon>
-                <button-icon
-                  v-show="player.isPersonalFM"
-                  title="不喜欢"
-                  @click="moveToFMTrash"
-                >
-                  <svg-icon icon-class="thumbs-down" />
                 </button-icon>
                 <button-icon
                   id="play"
@@ -191,7 +182,6 @@
                 </button-icon>
               </div>
               <button-icon
-                v-show="!player.isPersonalFM"
                 :title="$t('player.shuffle')"
                 :class="{ active: player.shuffle }"
                 @click="switchShuffle"
@@ -533,11 +523,7 @@ export default {
       this.player.playOrPause();
     },
     playNextTrack() {
-      if (this.player.isPersonalFM) {
-        this.player.playNextFMTrack();
-      } else {
-        this.player.playNextTrack();
-      }
+      this.player.playNextTrack();
     },
     getLyric() {
       if (!this.currentTrack.id) return;
@@ -641,9 +627,6 @@ export default {
             });
         }
       }, 50);
-    },
-    moveToFMTrash() {
-      this.player.moveToFMTrash();
     },
     switchRepeatMode() {
       this.player.switchRepeatMode();

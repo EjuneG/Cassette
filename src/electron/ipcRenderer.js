@@ -26,11 +26,7 @@ export function ipcRenderer(vueInstance) {
   });
 
   api.on('next', () => {
-    if (player.isPersonalFM) {
-      player.playNextFMTrack();
-    } else {
-      player.playNextTrack();
-    }
+    player.playNextTrack();
   });
 
   api.on('previous', () => {

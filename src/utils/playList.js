@@ -8,7 +8,7 @@ import {
 import { isAccountLoggedIn } from '@/utils/auth';
 
 export function hasListSource() {
-  return !state.player.isPersonalFM && state.player.playlistSource.id !== 0;
+  return state.player.playlistSource.id !== 0;
 }
 
 export function goToListSource() {

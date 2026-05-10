@@ -73,17 +73,8 @@
       <div class="middle-control-buttons">
         <div class="blank"></div>
         <div class="container" @click.stop>
-          <button-icon
-            v-show="!player.isPersonalFM"
-            :title="$t('player.previous')"
-            @click="playPrevTrack"
+          <button-icon :title="$t('player.previous')" @click="playPrevTrack"
             ><svg-icon icon-class="previous"
-          /></button-icon>
-          <button-icon
-            v-show="player.isPersonalFM"
-            title="不喜欢"
-            @click="moveToFMTrash"
-            ><svg-icon icon-class="thumbs-down"
           /></button-icon>
           <button-icon
             class="play"
@@ -103,18 +94,12 @@
         <div class="container" @click.stop>
           <button-icon
             :title="$t('player.nextUp')"
-            :class="{
-              active: $route.name === 'next',
-              disabled: player.isPersonalFM,
-            }"
+            :class="{ active: $route.name === 'next' }"
             @click="goToNextTracksPage"
             ><svg-icon icon-class="list"
           /></button-icon>
           <button-icon
-            :class="{
-              active: player.repeatMode !== 'off',
-              disabled: player.isPersonalFM,
-            }"
+            :class="{ active: player.repeatMode !== 'off' }"
             :title="
               player.repeatMode === 'one'
                 ? $t('player.repeatTrack')
@@ -132,14 +117,14 @@
             />
           </button-icon>
           <button-icon
-            :class="{ active: player.shuffle, disabled: player.isPersonalFM }"
+            :class="{ active: player.shuffle }"
             :title="$t('player.shuffle')"
             @click="switchShuffle"
             ><svg-icon icon-class="shuffle"
           /></button-icon>
           <button-icon
             v-if="settings.enableReversedMode"
-            :class="{ active: player.reversed, disabled: player.isPersonalFM }"
+            :class="{ active: player.reversed }"
             :title="$t('player.reversed')"
             @click="switchReversed"
             ><svg-icon icon-class="sort-up"
@@ -249,14 +234,9 @@ export default {
       this.player.playOrPause();
     },
     playNextTrack() {
-      if (this.player.isPersonalFM) {
-        this.player.playNextFMTrack();
-      } else {
-        this.player.playNextTrack();
-      }
+      this.player.playNextTrack();
     },
     goToNextTracksPage() {
-      if (this.player.isPersonalFM) return;
       this.$route.name === 'next'
         ? this.$router.go(-1)
         : this.$router.push({ name: 'next' });
@@ -276,9 +256,6 @@ export default {
     },
     goToArtist(id) {
       this.$router.push({ path: '/artist/' + id });
-    },
-    moveToFMTrash() {
-      this.player.moveToFMTrash();
     },
     switchRepeatMode() {
       this.player.switchRepeatMode();

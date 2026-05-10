@@ -27,24 +27,3 @@ export function search(params) {
     return data;
   });
 }
-
-export function personalFM() {
-  return request({
-    url: '/personal_fm',
-    method: 'get',
-    params: {
-      timestamp: new Date().getTime(),
-    },
-  });
-}
-
-export function fmTrash(id) {
-  return request({
-    url: '/fm_trash',
-    method: 'post',
-    params: {
-      timestamp: new Date().getTime(),
-      id,
-    },
-  });
-}

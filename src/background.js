@@ -168,9 +168,7 @@ class Background {
         .executeJavaScript('window.yesplaymusic.player')
         .then(result => {
           res.send({
-            currentTrack: result._isPersonalFM
-              ? result._personalFMTrack
-              : result._currentTrack,
+            currentTrack: result._currentTrack,
             progress: result._progress,
           });
         });

@@ -1,7 +1,6 @@
 import { getAlbum } from '@/api/album';
 import { getArtist } from '@/api/artist';
 import { trackScrobble, trackUpdateNowPlaying } from '@/api/lastfm';
-import { fmTrash, personalFM } from '@/api/others';
 import { getPlaylistDetail, intelligencePlaylist } from '@/api/playlist';
 import { getLyric, getMP3, getTrackDetail, scrobble } from '@/api/track';
 import store from '@/store';
@@ -32,13 +31,7 @@ const delay = ms =>
       resolve('');
     }, ms);
   });
-const excludeSaveKeys = [
-  '_playing',
-  '_progress',
-  '_personalFMLoading',
-  '_personalFMNextLoading',
-  '_replaceTrackNonce',
-];
+const excludeSaveKeys = ['_playing', '_progress', '_replaceTrackNonce'];
 
 function setTitle(track) {
   document.title = track
@@ -67,8 +60,6 @@ export default class {
     this._reversed = false;
     this._volume = 1; // 0 to 1
     this._volumeBeforeMuted = 1; // 用于保存静音前的音量
-    this._personalFMLoading = false; // 是否正在私人FM中加载新的track
-    this._personalFMNextLoading = false; // 是否正在缓存私人FM的下一首歌曲
 
     // 播放信息
     this._list = []; // 播放列表
@@ -78,11 +69,6 @@ export default class {
     this._playlistSource = { type: 'album', id: 123 }; // 当前播放列表的信息
     this._currentTrack = { id: 86827685 }; // 当前播放歌曲的详细信息
     this._playNextList = []; // 当这个list不为空时，会优先播放这个list的歌
-    this._isPersonalFM = false; // 是否是私人FM模式
-    this._personalFMTrack = { id: 0 }; // 私人FM当前歌曲
-    this._personalFMNextTrack = {
-      id: 0,
-    }; // 私人FM下一首歌曲信息（为了快速加载下一首）
 
     /**
      * The blob records for cleanup.
@@ -113,7 +99,6 @@ export default class {
     return this._repeatMode;
   }
   set repeatMode(mode) {
-    if (this._isPersonalFM) return;
     if (!['off', 'on', 'one'].includes(mode)) {
       console.warn("repeatMode: invalid args, must be 'on' | 'off' | 'one'");
       return;
@@ -124,7 +109,6 @@ export default class {
     return this._shuffle;
   }
   set shuffle(shuffle) {
-    if (this._isPersonalFM) return;
     if (shuffle !== true && shuffle !== false) {
       console.warn('shuffle: invalid args, must be Boolean');
       return;
@@ -140,7 +124,6 @@ export default class {
     return this._reversed;
   }
   set reversed(reversed) {
-    if (this._isPersonalFM) return;
     if (reversed !== true && reversed !== false) {
       console.warn('reversed: invalid args, must be Boolean');
       return;
@@ -189,12 +172,6 @@ export default class {
   get playNextList() {
     return this._playNextList;
   }
-  get isPersonalFM() {
-    return this._isPersonalFM;
-  }
-  get personalFMTrack() {
-    return this._personalFMTrack;
-  }
   get currentTrackDuration() {
     const trackDuration = this._currentTrack.dt || 1000;
     let duration = ~~(trackDuration / 1000);
@@ -229,19 +206,6 @@ export default class {
     }
 
     this._setIntervals();
-
-    // 初始化私人FM
-    if (
-      this._personalFMTrack.id === 0 ||
-      this._personalFMNextTrack.id === 0 ||
-      this._personalFMTrack.id === this._personalFMNextTrack.id
-    ) {
-      personalFM().then(result => {
-        this._personalFMTrack = result.data[0];
-        this._personalFMNextTrack = result.data[1];
-        return this._personalFMTrack;
-      });
-    }
   }
   _setPlaying(isPlaying) {
     this._playing = isPlaying;
@@ -347,17 +311,17 @@ export default class {
     this._howler.on('playerror', (_, errCode) => {
       console.error(`[Player] Howler playerror code: ${errCode}`);
       store.dispatch('showToast', `播放失败，尝试下一首`);
-      this._playNextTrack(this._isPersonalFM);
+      this.playNextTrack();
     });
     this._howler.on('loaderror', (_, errCode) => {
       // https://developer.mozilla.org/en-US/docs/Web/API/MediaError/code
       // code 3: MEDIA_ERR_DECODE
       if (errCode === 3) {
-        this._playNextTrack(this._isPersonalFM);
+        this.playNextTrack();
       } else if (errCode === 4) {
         // code 4: MEDIA_ERR_SRC_NOT_SUPPORTED
         store.dispatch('showToast', `无法播放: 不支持的音频格式`);
-        this._playNextTrack(this._isPersonalFM);
+        this.playNextTrack();
       } else {
         const t = this.progress;
         this._replaceCurrentTrackAudio(this.currentTrack, false, false).then(
@@ -569,7 +533,7 @@ export default class {
           store.dispatch('showToast', `无法播放 ${track.name}`);
           switch (ifUnplayableThen) {
             case UNPLAYABLE_CONDITION.PLAY_NEXT_TRACK:
-              this._playNextTrack(this.isPersonalFM);
+              this.playNextTrack();
               break;
             case UNPLAYABLE_CONDITION.PLAY_PREV_TRACK:
               this.playPrevTrack();
@@ -594,11 +558,8 @@ export default class {
       });
   }
   _cacheNextTrack() {
-    let nextTrackID = this._isPersonalFM
-      ? this._personalFMNextTrack?.id ?? 0
-      : this._getNextTrack()[0];
+    let nextTrackID = this._getNextTrack()[0];
     if (!nextTrackID) return;
-    if (this._personalFMTrack.id == nextTrackID) return;
     getTrackDetail(nextTrackID).then(data => {
       let track = data.songs[0];
       this._getAudioSource(track);
@@ -623,7 +584,7 @@ export default class {
         this.playPrevTrack();
       });
       navigator.mediaSession.setActionHandler('nexttrack', () => {
-        this._playNextTrack(this.isPersonalFM);
+        this.playNextTrack();
       });
       navigator.mediaSession.setActionHandler('stop', () => {
         this.pause();
@@ -708,33 +669,11 @@ export default class {
   }
   _nextTrackCallback() {
     this._scrobble(this._currentTrack, 0, true);
-    if (!this.isPersonalFM && this.repeatMode === 'one') {
+    if (this.repeatMode === 'one') {
       this._replaceCurrentTrack(this.currentTrackID);
     } else {
-      this._playNextTrack(this.isPersonalFM);
+      this.playNextTrack();
     }
-  }
-  _loadPersonalFMNextTrack() {
-    if (this._personalFMNextLoading) {
-      return [false, undefined];
-    }
-    this._personalFMNextLoading = true;
-    return personalFM()
-      .then(result => {
-        if (!result || !result.data) {
-          this._personalFMNextTrack = undefined;
-        } else {
-          this._personalFMNextTrack = result.data[0];
-          this._cacheNextTrack(); // cache next track
-        }
-        this._personalFMNextLoading = false;
-        return [true, this._personalFMNextTrack];
-      })
-      .catch(() => {
-        this._personalFMNextTrack = undefined;
-        this._personalFMNextLoading = false;
-        return [false, this._personalFMNextTrack];
-      });
   }
   _playDiscordPresence(track, seekTime = 0) {
     if (
@@ -756,14 +695,6 @@ export default class {
     }
     electronAPI?.send('pauseDiscordPresence', track);
   }
-  _playNextTrack(isPersonal) {
-    if (isPersonal) {
-      this.playNextFMTrack();
-    } else {
-      this.playNextTrack();
-    }
-  }
-
   appendTrack(trackID) {
     this.list.append(trackID);
   }
@@ -782,51 +713,6 @@ export default class {
     }
     this.current = next;
     this._replaceCurrentTrack(trackID);
-    return true;
-  }
-  async playNextFMTrack() {
-    if (this._personalFMLoading) {
-      return false;
-    }
-
-    this._isPersonalFM = true;
-    if (!this._personalFMNextTrack) {
-      this._personalFMLoading = true;
-      let result = null;
-      let retryCount = 5;
-      for (; retryCount >= 0; retryCount--) {
-        result = await personalFM().catch(() => null);
-        if (!result) {
-          this._personalFMLoading = false;
-          store.dispatch('showToast', 'personal fm timeout');
-          return false;
-        }
-        if (result.data?.length > 0) {
-          break;
-        } else if (retryCount > 0) {
-          await delay(1000);
-        }
-      }
-      this._personalFMLoading = false;
-
-      if (retryCount < 0) {
-        let content = '获取私人FM数据时重试次数过多，请手动切换下一首';
-        store.dispatch('showToast', content);
-        console.log(content);
-        return false;
-      }
-      // 这里只能拿到一条数据
-      this._personalFMTrack = result.data[0];
-    } else {
-      if (this._personalFMNextTrack.id === this._personalFMTrack.id) {
-        return false;
-      }
-      this._personalFMTrack = this._personalFMNextTrack;
-    }
-    if (this._isPersonalFM) {
-      this._replaceCurrentTrack(this._personalFMTrack.id);
-    }
-    this._loadPersonalFMNextTrack();
     return true;
   }
   playPrevTrack() {
@@ -926,7 +812,6 @@ export default class {
     playlistSourceType,
     autoPlayTrackID = 'first'
   ) {
-    this._isPersonalFM = false;
     this.list = trackIDs;
     this.current = 0;
     this._playlistSource = {
@@ -986,22 +871,6 @@ export default class {
       this.playNextTrack();
     }
   }
-  playPersonalFM() {
-    this._isPersonalFM = true;
-    if (this.currentTrackID !== this._personalFMTrack.id) {
-      this._replaceCurrentTrack(this._personalFMTrack.id, true);
-    } else {
-      this.playOrPause();
-    }
-  }
-  async moveToFMTrash() {
-    this._isPersonalFM = true;
-    let id = this._personalFMTrack.id;
-    if (await this.playNextFMTrack()) {
-      fmTrash(id);
-    }
-  }
-
   sendSelfToIpcMain() {
     if (process.env.IS_ELECTRON !== true) return false;
     let liked = store.state.liked.songs.includes(this.currentTrack.id);
