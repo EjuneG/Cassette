@@ -6,7 +6,6 @@ import {
   shell,
   dialog,
   globalShortcut,
-  nativeTheme,
   screen,
 } from 'electron';
 import {
@@ -186,7 +185,6 @@ class Background {
   createWindow() {
     log('creating app window');
 
-    const appearance = this.store.get('settings.appearance');
     const showLibraryDefault = this.store.get('settings.showLibraryDefault');
 
     const options = {
@@ -206,12 +204,7 @@ class Background {
         contextIsolation: true,
         preload: path.join(__dirname, 'preload.js'),
       },
-      backgroundColor:
-        ((appearance === undefined || appearance === 'auto') &&
-          nativeTheme.shouldUseDarkColors) ||
-        appearance === 'dark'
-          ? '#222'
-          : '#fff',
+      backgroundColor: '#222',
     };
 
     if (this.store.get('window.x') && this.store.get('window.y')) {

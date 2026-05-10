@@ -156,12 +156,6 @@ export default {
     },
     deviceSelector: 'Audio Output Device',
     permissionRequired: 'Microphone Permission Required',
-    appearance: {
-      text: 'Appearance',
-      auto: 'Auto',
-      light: 'Light',
-      dark: 'Dark',
-    },
     trayIcon: {
       text: 'Tray Icon Color',
       auto: 'Auto',

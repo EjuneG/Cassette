@@ -45,7 +45,6 @@ import { ipcRenderer } from './electron/ipcRenderer';
 import { isAccountLoggedIn, isLooseLoggedIn } from '@/utils/auth';
 import Lyrics from './views/lyrics.vue';
 import { mapState } from 'vuex';
-import { changeAppearance } from '@/utils/common';
 
 export default {
   name: 'App',
@@ -97,13 +96,7 @@ export default {
       return true;
     },
   },
-  watch: {
-    'settings.appearance'(val) {
-      changeAppearance(val);
-    },
-  },
   created() {
-    changeAppearance(this.settings.appearance);
     if (this.isElectron) ipcRenderer(this);
     window.addEventListener('keydown', this.handleKeydown);
     this.fetchData();

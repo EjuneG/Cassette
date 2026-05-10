@@ -153,12 +153,6 @@ export default {
     },
     deviceSelector: '音訊輸出裝置',
     permissionRequired: '需要麥克風權限',
-    appearance: {
-      text: '外觀',
-      auto: '自動',
-      light: '淺色',
-      dark: '深色',
-    },
     trayIcon: {
       text: '工作列圖示顏色',
       auto: '自動',

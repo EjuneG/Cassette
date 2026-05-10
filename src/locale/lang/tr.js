@@ -151,12 +151,6 @@ export default {
     },
     deviceSelector: 'Ses Çıkış Cihazı',
     permissionRequired: 'Mikrofon izni gerekiyor',
-    appearance: {
-      text: 'Görünüş',
-      auto: 'Otomatik',
-      light: 'Aydınlık',
-      dark: 'Karanlık',
-    },
     trayIcon: {
       text: 'Tepsi Simgesi Rengi',
       auto: 'Otomatik',

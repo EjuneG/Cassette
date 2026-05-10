@@ -11,7 +11,6 @@ let localStorage = {
   settings: {
     lang: null,
     musicLanguage: 'all',
-    appearance: 'auto',
     musicQuality: 320000,
     lyricFontSize: 28,
     outputDevice: 'default',

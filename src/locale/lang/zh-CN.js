@@ -157,12 +157,6 @@ export default {
     },
     deviceSelector: '音频输出设备',
     permissionRequired: '需要麦克风权限',
-    appearance: {
-      text: '外观',
-      auto: '自动',
-      light: '浅色',
-      dark: '深色',
-    },
     trayIcon: {
       text: '托盘图标颜色',
       auto: '自动',

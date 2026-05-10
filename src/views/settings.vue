@@ -40,22 +40,6 @@
           </select>
         </div>
       </div>
-      <div class="item">
-        <div class="left">
-          <div class="title"> {{ $t('settings.appearance.text') }} </div>
-        </div>
-        <div class="right">
-          <select v-model="appearance">
-            <option value="auto">{{ $t('settings.appearance.auto') }}</option>
-            <option value="light"
-              >🌞 {{ $t('settings.appearance.light') }}</option
-            >
-            <option value="dark"
-              >🌚 {{ $t('settings.appearance.dark') }}</option
-            >
-          </select>
-        </div>
-      </div>
       <div v-if="isElectron" class="item">
         <div class="left">
           <div class="title"> {{ $t('settings.trayIcon.text') }} </div>
@@ -753,7 +737,7 @@
 <script>
 import { mapState, mapActions } from 'vuex';
 import { isLooseLoggedIn, doLogout } from '@/utils/auth';
-import { changeAppearance, bytesToSize } from '@/utils/common';
+import { bytesToSize } from '@/utils/common';
 import { countDBSize, clearDB } from '@/utils/db';
 import pkg from '../../package.json';
 
@@ -864,19 +848,6 @@ export default {
           key: 'musicLanguage',
           value,
         });
-      },
-    },
-    appearance: {
-      get() {
-        if (this.settings.appearance === undefined) return 'auto';
-        return this.settings.appearance;
-      },
-      set(value) {
-        this.$store.commit('updateSettings', {
-          key: 'appearance',
-          value,
-        });
-        changeAppearance(value);
       },
     },
     trayIconTheme: {
