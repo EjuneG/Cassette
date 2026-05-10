@@ -1,192 +1,146 @@
 <template>
-  <div v-show="show" ref="library">
-    <h1>
-      <img
-        class="avatar"
-        :src="resizeImage(data.user.avatarUrl)"
-        loading="lazy"
-      />{{ data.user.nickname }}{{ $t('library.sLibrary') }}
-    </h1>
-    <div class="section-one">
-      <div class="liked-songs" @click="goToLikedSongsList">
-        <div class="top">
-          <p>
-            <span
-              v-for="(line, index) in pickedLyric"
-              v-show="line !== ''"
-              :key="`${line}${index}`"
-              >{{ line }}<br
-            /></span>
-          </p>
-        </div>
-        <div class="bottom">
-          <div class="titles">
-            <div class="title">{{ $t('library.likedSongs') }}</div>
-            <div class="sub-title">
-              {{ liked.songs.length }} {{ $t('common.songs') }}
-            </div>
-          </div>
-          <button @click.stop="openPlayModeTabMenu">
-            <svg-icon icon-class="play" />
-          </button>
-        </div>
-      </div>
-      <div class="songs">
-        <TrackList
-          :id="liked.playlists.length > 0 ? liked.playlists[0].id : 0"
-          :tracks="liked.songsWithDetails"
-          :column-number="3"
-          type="tracklist"
-          dbclick-track-func="playPlaylistByID"
-        />
-      </div>
-    </div>
+  <div v-show="show" ref="library" class="library-page">
+    <!-- ========== SIDE A — fast entries ========== -->
+    <header class="region-header">
+      <span class="region-label">Side A</span>
+    </header>
 
-    <div class="section-two">
-      <div class="tabs-row">
-        <div class="tabs">
-          <div
-            class="tab dropdown"
-            :class="{ active: currentTab === 'playlists' }"
-            @click="updateCurrentTab('playlists')"
+    <section class="side-a">
+      <!-- Liked Songs entry — the headline tape -->
+      <button class="entry entry-liked" @click="goToLikedSongsList">
+        <div class="entry-top">
+          <span class="entry-tag mono-stamp">A1</span>
+          <span class="entry-count mono-stamp"
+            >{{ liked.songs.length }} TRACKS</span
           >
-            <span class="text">{{
+        </div>
+        <div class="entry-foot">
+          <span class="entry-cta mono-stamp">PLAY</span>
+          <span
+            class="play-icon"
+            :title="$t('common.play')"
+            @click.stop="openPlayModeTabMenu"
+          >
+            <svg-icon icon-class="play" />
+          </span>
+        </div>
+      </button>
+
+      <!-- Recently Played entry — links to dedicated page -->
+      <button class="entry entry-recent" @click="goToPlayHistory">
+        <div class="entry-top">
+          <span class="entry-tag mono-stamp">A2</span>
+          <span class="entry-count mono-stamp">{{ recentCount }} TRACKS</span>
+        </div>
+        <div class="entry-foot">
+          <span class="entry-cta mono-stamp">VIEW LOG</span>
+          <span class="chevron">→</span>
+        </div>
+      </button>
+    </section>
+
+    <!-- ========== SIDE B — the library proper ========== -->
+    <header class="region-header region-header--side-b">
+      <span class="region-label">Side B</span>
+    </header>
+
+    <section class="side-b">
+      <div class="drawer-tabs">
+        <button
+          class="drawer-tab"
+          :class="{ on: currentTab === 'playlists' }"
+          @click="updateCurrentTab('playlists')"
+        >
+          <span class="drawer-tab-text">{{ $t('library.playlists') }}</span>
+          <span
+            v-if="currentTab === 'playlists'"
+            class="drawer-tab-filter mono-stamp"
+            @click.stop="openPlaylistTabMenu"
+          >
+            {{
               {
                 all: $t('contextMenu.allPlaylists'),
                 mine: $t('contextMenu.minePlaylists'),
                 liked: $t('contextMenu.likedPlaylists'),
               }[playlistFilter]
-            }}</span>
-            <span class="icon" @click.stop="openPlaylistTabMenu"
-              ><svg-icon icon-class="dropdown"
-            /></span>
-          </div>
-          <div
-            class="tab"
-            :class="{ active: currentTab === 'albums' }"
-            @click="updateCurrentTab('albums')"
-          >
-            {{ $t('library.albums') }}
-          </div>
-          <div
-            class="tab"
-            :class="{ active: currentTab === 'artists' }"
-            @click="updateCurrentTab('artists')"
-          >
-            {{ $t('library.artists') }}
-          </div>
-          <div
-            class="tab"
-            :class="{ active: currentTab === 'mvs' }"
-            @click="updateCurrentTab('mvs')"
-          >
-            {{ $t('library.mvs') }}
-          </div>
-          <div
-            class="tab"
-            :class="{ active: currentTab === 'cloudDisk' }"
-            @click="updateCurrentTab('cloudDisk')"
-          >
-            {{ $t('library.cloudDisk') }}
-          </div>
-          <div
-            class="tab"
-            :class="{ active: currentTab === 'playHistory' }"
-            @click="updateCurrentTab('playHistory')"
-          >
-            {{ $t('library.playHistory.title') }}
-          </div>
-        </div>
+            }}
+            <svg-icon icon-class="dropdown" />
+          </span>
+        </button>
+        <button
+          class="drawer-tab"
+          :class="{ on: currentTab === 'albums' }"
+          @click="updateCurrentTab('albums')"
+        >
+          <span class="drawer-tab-text">{{ $t('library.albums') }}</span>
+        </button>
+        <button
+          class="drawer-tab"
+          :class="{ on: currentTab === 'artists' }"
+          @click="updateCurrentTab('artists')"
+        >
+          <span class="drawer-tab-text">{{ $t('library.artists') }}</span>
+        </button>
+
+        <div class="drawer-tabs-spacer"></div>
+
         <button
           v-show="currentTab === 'playlists'"
-          class="tab-button"
+          class="drawer-action"
           @click="openAddPlaylistModal"
-          ><svg-icon icon-class="plus" />{{ $t('library.newPlayList') }}
-        </button>
-        <button
-          v-show="currentTab === 'cloudDisk'"
-          class="tab-button"
-          @click="selectUploadFiles"
-          ><svg-icon icon-class="arrow-up-alt" />{{ $t('library.uploadSongs') }}
+        >
+          <svg-icon icon-class="plus" />
+          <span>{{ $t('library.newPlayList') }}</span>
         </button>
       </div>
 
-      <div v-show="currentTab === 'playlists'">
-        <div v-if="liked.playlists.length > 1">
-          <CoverRow
-            :items="filterPlaylists"
-            type="playlist"
-            sub-text="creator"
-            :show-play-button="true"
-          />
+      <div v-show="currentTab === 'playlists'" class="drawer-body">
+        <CoverRow
+          v-if="liked.playlists.length > 1"
+          :items="filterPlaylists"
+          type="playlist"
+          sub-text="creator"
+          :show-play-button="true"
+          :column-number="6"
+          gap="28px 18px"
+          sub-text-font-size="13px"
+        />
+        <div v-else class="empty-block">
+          <span class="mono-stamp">No playlists.</span>
         </div>
       </div>
 
-      <div v-show="currentTab === 'albums'">
+      <div v-show="currentTab === 'albums'" class="drawer-body">
         <CoverRow
+          v-if="liked.albums && liked.albums.length > 0"
           :items="liked.albums"
           type="album"
           sub-text="artist"
           :show-play-button="true"
+          :column-number="6"
+          gap="28px 18px"
+          sub-text-font-size="13px"
         />
+        <div v-else class="empty-block">
+          <span class="mono-stamp">No albums.</span>
+        </div>
       </div>
 
-      <div v-show="currentTab === 'artists'">
+      <div v-show="currentTab === 'artists'" class="drawer-body">
         <CoverRow
+          v-if="liked.artists && liked.artists.length > 0"
           :items="liked.artists"
           type="artist"
           :show-play-button="true"
+          :column-number="6"
+          gap="28px 18px"
+          sub-text-font-size="13px"
         />
+        <div v-else class="empty-block">
+          <span class="mono-stamp">No artists.</span>
+        </div>
       </div>
-
-      <div v-show="currentTab === 'mvs'">
-        <MvRow :mvs="liked.mvs" />
-      </div>
-
-      <div v-show="currentTab === 'cloudDisk'">
-        <TrackList
-          :id="-8"
-          :tracks="liked.cloudDisk"
-          :column-number="3"
-          type="cloudDisk"
-          dbclick-track-func="playCloudDisk"
-          :extra-context-menu-item="['removeTrackFromCloudDisk']"
-        />
-      </div>
-
-      <div v-show="currentTab === 'playHistory'">
-        <button
-          :class="{
-            'playHistory-button': true,
-            'playHistory-button--selected': playHistoryMode === 'week',
-          }"
-          @click="playHistoryMode = 'week'"
-        >
-          {{ $t('library.playHistory.week') }}
-        </button>
-        <button
-          :class="{
-            'playHistory-button': true,
-            'playHistory-button--selected': playHistoryMode === 'all',
-          }"
-          @click="playHistoryMode = 'all'"
-        >
-          {{ $t('library.playHistory.all') }}
-        </button>
-        <TrackList
-          :tracks="playHistoryList"
-          :column-number="1"
-          type="tracklist"
-        />
-      </div>
-    </div>
-
-    <input
-      ref="cloudDiskUploadInput"
-      type="file"
-      style="display: none"
-      @change="uploadSongToCloudDisk"
-    />
+    </section>
 
     <ContextMenu ref="playlistTabMenu">
       <div class="item" @click="changePlaylistFilter('all')">{{
@@ -215,71 +169,27 @@
 
 <script>
 import { mapActions, mapMutations, mapState } from 'vuex';
-import { randomNum, dailyTask } from '@/utils/common';
+import { dailyTask } from '@/utils/common';
 import { isAccountLoggedIn } from '@/utils/auth';
-import { uploadSong } from '@/api/user';
-import { getLyric } from '@/api/track';
 import NProgress from 'nprogress';
 import { locale } from '@/locale';
-import { resizeImage } from '@/utils/filters';
 
 import ContextMenu from '@/components/ContextMenu.vue';
-import TrackList from '@/components/TrackList.vue';
 import CoverRow from '@/components/CoverRow.vue';
 import SvgIcon from '@/components/SvgIcon.vue';
-import MvRow from '@/components/MvRow.vue';
-
-/**
- * Pick the lyric part from a string formed in `[timecode] lyric`.
- *
- * @param {string} rawLyric The raw lyric string formed in `[timecode] lyric`
- * @returns {string} The lyric part
- */
-function extractLyricPart(rawLyric) {
-  return rawLyric.split(']').pop().trim();
-}
 
 export default {
   name: 'Library',
-  components: { SvgIcon, CoverRow, TrackList, MvRow, ContextMenu },
+  components: { SvgIcon, CoverRow, ContextMenu },
   inject: ['scrollToMain', 'restoreScrollPosition'],
   data() {
     return {
       show: false,
-      likedSongs: [],
-      lyric: undefined,
       currentTab: 'playlists',
-      playHistoryMode: 'week',
     };
   },
   computed: {
     ...mapState(['data', 'liked']),
-    /**
-     * @returns {string[]}
-     */
-    pickedLyric() {
-      /** @type {string?} */
-      const lyric = this.lyric;
-
-      // Returns [] if we got no lyrics.
-      if (!lyric) return [];
-
-      const lyricLine = lyric
-        .split('\n')
-        .filter(line => !line.includes('作词') && !line.includes('作曲'));
-
-      // Pick 3 or fewer lyrics based on the lyric lines.
-      const lyricsToPick = Math.min(lyricLine.length, 3);
-
-      // The upperBound of the lyric line to pick
-      const randomUpperBound = lyricLine.length - lyricsToPick;
-      const startLyricLineIndex = randomNum(0, randomUpperBound - 1);
-
-      // Pick lyric lines to render.
-      return lyricLine
-        .slice(startLyricLineIndex, startLyricLineIndex + lyricsToPick)
-        .map(extractLyricPart);
-    },
     playlistFilter() {
       return this.data.libraryPlaylistFilter || 'all';
     },
@@ -293,14 +203,8 @@ export default {
       }
       return playlists;
     },
-    playHistoryList() {
-      if (this.show && this.playHistoryMode === 'week') {
-        return this.liked.playHistory.weekData;
-      }
-      if (this.show && this.playHistoryMode === 'all') {
-        return this.liked.playHistory.allData;
-      }
-      return [];
+    recentCount() {
+      return (this.liked.playHistory.weekData || []).length;
     },
   },
   created() {
@@ -315,28 +219,22 @@ export default {
     dailyTask();
   },
   methods: {
-    resizeImage,
     ...mapActions(['showToast']),
     ...mapMutations(['updateModal', 'updateData']),
     loadData() {
       if (this.liked.songsWithDetails.length > 0) {
         NProgress.done();
         this.show = true;
-        this.$store.dispatch('fetchLikedSongsWithDetails');
-        this.getRandomLyric();
       } else {
         this.$store.dispatch('fetchLikedSongsWithDetails').then(() => {
           NProgress.done();
           this.show = true;
-          this.getRandomLyric();
         });
       }
       this.$store.dispatch('fetchLikedSongs');
       this.$store.dispatch('fetchLikedPlaylist');
       this.$store.dispatch('fetchLikedAlbums');
       this.$store.dispatch('fetchLikedArtists');
-      this.$store.dispatch('fetchLikedMVs');
-      this.$store.dispatch('fetchCloudDisk');
       this.$store.dispatch('fetchPlayHistory');
     },
     playLikedSongs() {
@@ -359,25 +257,12 @@ export default {
         return;
       }
       this.currentTab = tab;
-      this.scrollToMain({ top: 375, behavior: 'smooth' });
     },
     goToLikedSongsList() {
       this.$router.push({ path: '/library/liked-songs' });
     },
-    getRandomLyric() {
-      if (this.liked.songs.length === 0) return;
-      getLyric(
-        this.liked.songs[randomNum(0, this.liked.songs.length - 1)]
-      ).then(data => {
-        if (data.lrc !== undefined) {
-          const isInstrumental = data.lrc.lyric
-            .split('\n')
-            .filter(l => l.includes('纯音乐，请欣赏'));
-          if (isInstrumental.length === 0) {
-            this.lyric = data.lrc.lyric;
-          }
-        }
-      });
+    goToPlayHistory() {
+      this.$router.push({ path: '/library/play-history' });
     },
     openAddPlaylistModal() {
       if (!isAccountLoggedIn()) {
@@ -398,230 +283,278 @@ export default {
     },
     changePlaylistFilter(type) {
       this.updateData({ key: 'libraryPlaylistFilter', value: type });
-      window.scrollTo({ top: 375, behavior: 'smooth' });
-    },
-    selectUploadFiles() {
-      this.$refs.cloudDiskUploadInput.click();
-    },
-    uploadSongToCloudDisk(e) {
-      const files = e.target.files;
-      uploadSong(files[0]).then(result => {
-        if (result.code === 200) {
-          let newCloudDisk = this.liked.cloudDisk;
-          newCloudDisk.unshift(result.privateCloud);
-          this.$store.commit('updateLikedXXX', {
-            name: 'cloudDisk',
-            data: newCloudDisk,
-          });
-        }
-      });
     },
   },
 };
 </script>
 
 <style lang="scss" scoped>
-h1 {
-  font-size: 42px;
-  color: var(--color-text);
+.library-page {
+  padding-top: 8px;
+}
+
+.region-header {
   display: flex;
   align-items: center;
-  .avatar {
-    height: 44px;
-    margin-right: 12px;
-    vertical-align: -7px;
-    border-radius: 50%;
-    border: rgba(0, 0, 0, 0.2);
+  margin: 6px 0 18px;
+
+  &--side-b {
+    margin-top: 40px;
   }
 }
 
-.section-one {
-  display: flex;
-  margin-top: 24px;
-  .songs {
-    flex: 7;
-    margin-top: 8px;
-    margin-left: 36px;
-    overflow: hidden;
+/* ============================== SIDE A ============================== */
+
+.side-a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .side-a {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
-.liked-songs {
-  flex: 3;
-  margin-top: 8px;
-  cursor: pointer;
-  border-radius: 16px;
-  padding: 18px 24px;
+.entry {
+  position: relative;
   display: flex;
   flex-direction: column;
-  transition: all 0.4s;
-  box-sizing: border-box;
-
-  background: var(--color-primary-bg);
-
-  .bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--color-primary);
-
-    .title {
-      font-size: 24px;
-      font-weight: 700;
-    }
-    .sub-title {
-      font-size: 15px;
-      margin-top: 2px;
-    }
-
-    button {
-      margin-bottom: 2px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 44px;
-      width: 44px;
-      background: var(--color-primary);
-      border-radius: 50%;
-      transition: 0.2s;
-      box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.2);
-      cursor: default;
-
-      .svg-icon {
-        color: var(--color-primary-bg);
-        margin-left: 4px;
-        height: 16px;
-        width: 16px;
-      }
-      &:hover {
-        transform: scale(1.06);
-        box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.4);
-      }
-      &:active {
-        transform: scale(0.94);
-      }
-    }
-  }
-
-  .top {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    font-size: 14px;
-    opacity: 0.88;
-    color: var(--color-primary);
-    p {
-      margin-top: 2px;
-    }
-  }
-}
-
-.section-two {
-  margin-top: 54px;
-  min-height: calc(100vh - 182px);
-}
-
-.tabs-row {
-  display: flex;
   justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  font-size: 18px;
-  color: var(--color-text);
-  .tab {
-    font-weight: 600;
-    padding: 8px 14px;
-    margin-right: 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    user-select: none;
-    transition: 0.2s;
-    opacity: 0.68;
-    &:hover {
-      opacity: 0.88;
-      background-color: var(--color-secondary-bg);
-    }
-  }
-  .tab.active {
-    opacity: 0.88;
-    background-color: var(--color-secondary-bg);
-  }
-  .tab.dropdown {
-    display: flex;
-    align-items: center;
-    padding: 0;
-    overflow: hidden;
-    .text {
-      padding: 8px 3px 8px 14px;
-    }
-    .icon {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      padding: 0 8px 0 3px;
-      .svg-icon {
-        height: 16px;
-        width: 16px;
-      }
-    }
-  }
-}
-
-button.tab-button {
-  color: var(--color-text);
+  gap: 28px;
+  padding: 18px 22px 16px;
+  height: 138px;
+  background: var(--housing-elev);
+  border: 1px solid var(--housing-hairline);
   border-radius: 8px;
-  padding: 0 14px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: 0.2s;
-  opacity: 0.68;
-  font-weight: 500;
-  .svg-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 8px;
-  }
-  &:hover {
-    opacity: 1;
-    background: var(--color-secondary-bg);
-  }
-  &:active {
-    opacity: 1;
-    transform: scale(0.92);
-  }
-}
-
-button.playHistory-button {
-  color: var(--color-text);
-  border-radius: 8px;
-  padding: 6px 8px;
-  margin-bottom: 12px;
-  margin-right: 4px;
-  transition: 0.2s;
-  opacity: 0.68;
-  font-weight: 500;
+  text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
+
   &:hover {
-    opacity: 1;
-    background: var(--color-secondary-bg);
+    border-color: var(--housing-divider);
+    background: var(--housing-elev);
+    transform: translateY(-1px);
   }
-  &:active {
-    transform: scale(0.95);
+
+  > * {
+    position: relative;
+    z-index: 1;
   }
 }
 
-button.playHistory-button--selected {
-  color: var(--color-text);
-  background: var(--color-secondary-bg);
-  opacity: 1;
-  font-weight: 700;
-  &:active {
-    transform: none;
+.entry-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .entry-tag {
+    color: var(--ink-soft);
+    letter-spacing: 0.18em;
   }
+  .entry-count {
+    color: var(--ink-soft);
+  }
+}
+
+.entry-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.entry-cta {
+  color: var(--ink-soft);
+  letter-spacing: 0.16em;
+}
+
+.entry-liked {
+  .play-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: var(--tape-orange);
+    color: var(--tape-orange-ink);
+    transition: transform var(--motion-fast) var(--ease-out),
+      box-shadow var(--motion-fast) var(--ease-out);
+
+    :deep(.svg-icon) {
+      width: 12px;
+      height: 12px;
+      margin-left: 2px;
+    }
+
+    &:hover {
+      transform: scale(1.06);
+      box-shadow: 0 6px 16px -6px var(--tape-orange);
+    }
+  }
+}
+
+.entry-recent .chevron {
+  color: var(--ink-soft);
+  font-size: 20px;
+  line-height: 1;
+  transition: transform var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+.entry-recent:hover .chevron {
+  color: var(--ink-strong);
+  transform: translateX(2px);
+}
+
+/* ============================== SIDE B ============================== */
+
+.side-b {
+  margin-top: 4px;
+  min-height: 200px;
+}
+
+.drawer-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--housing-hairline);
+}
+
+.drawer-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+  margin-right: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  background: transparent;
+  border-radius: 0;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out);
+
+  .drawer-tab-text {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 13px;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 1px;
+    background: var(--ink-strong);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform var(--motion-base) var(--ease-out);
+  }
+
+  &:hover {
+    color: var(--ink-strong);
+  }
+
+  &.on {
+    color: var(--ink-strong);
+
+    &::after {
+      transform: scaleX(1);
+    }
+  }
+}
+
+.drawer-tab-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--housing-elev);
+  color: var(--ink-mid);
+  padding: 3px 6px 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  font-size: 0.625rem;
+
+  :deep(.svg-icon) {
+    width: 10px;
+    height: 10px;
+  }
+
+  &:hover {
+    color: var(--ink-strong);
+  }
+}
+
+.drawer-tabs-spacer {
+  flex: 1;
+}
+
+.drawer-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-mid);
+  background: transparent;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+
+  :deep(.svg-icon) {
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover {
+    background: var(--housing-elev);
+    color: var(--ink-strong);
+  }
+}
+
+.drawer-body {
+  padding-top: 4px;
+}
+
+/* Tighten the CoverRow text and shrink covers slightly to match the
+   Studio Cassette density. Reaching across the scoped border with :deep().
+   The CoverRow's columnNumber prop controls grid; here we trim text size
+   and meta opacity for visual consistency with the new tokens. */
+.drawer-body :deep(.cover-row) {
+  .text {
+    margin-top: 8px;
+  }
+  .title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--ink-strong);
+  }
+  .info {
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 1;
+  }
+}
+
+.empty-block {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--ink-soft);
+  border: 1px dashed var(--housing-hairline);
+  border-radius: 8px;
 }
 </style>
