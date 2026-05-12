@@ -131,9 +131,7 @@
         </div>
         <div v-else class="lyrics-empty">
           <span class="region-label region-label--lone">No lyrics</span>
-          <p class="empty-prompt">{{
-            $t('lyrics.empty') || 'No lyrics for this track.'
-          }}</p>
+          <p class="empty-prompt">{{ $t('lyrics.empty') }}</p>
         </div>
       </div>
 
@@ -160,6 +158,7 @@
 import { mapState, mapMutations, mapActions } from 'vuex';
 import ContextMenu from '@/components/ContextMenu.vue';
 import { formatTrackTime } from '@/utils/common';
+import { resizeImage } from '@/utils/filters';
 import { getLyric } from '@/api/track';
 import { lyricParser, copyLyric } from '@/utils/lyrics';
 import { isAccountLoggedIn } from '@/utils/auth';
@@ -184,13 +183,12 @@ export default {
     };
   },
   computed: {
-    ...mapState(['player', 'settings', 'showLyrics']),
+    ...mapState(['player', 'showLyrics']),
     currentTrack() {
       return this.player.currentTrack;
     },
     imageUrl() {
-      const url = this.player.currentTrack?.al?.picUrl;
-      return url ? url + '?param=256y256' : '';
+      return resizeImage(this.player.currentTrack?.al?.picUrl, 256);
     },
     isShowLyricTypeSwitch() {
       return this.romalyric.length > 0 && this.tlyric.length > 0;
@@ -295,9 +293,7 @@ export default {
   methods: {
     ...mapMutations(['toggleLyrics', 'updateModal']),
     ...mapActions(['likeATrack']),
-    formatTrackTime(value) {
-      return formatTrackTime(value);
-    },
+    formatTrackTime,
     fullscreen() {
       if (document.fullscreenElement) {
         document.exitFullscreen();

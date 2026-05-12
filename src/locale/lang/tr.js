@@ -26,10 +26,7 @@ export default {
     playlists: 'Çalma Listeleri',
     albums: 'Albümler',
     artists: 'Sanatçılar',
-    mvs: 'MVs',
-    cloudDisk: 'Cloud Disk',
     newPlayList: 'Yeni Çalma Listesi',
-    uploadSongs: 'Upload Songs',
     playHistory: {
       title: 'Play History',
       week: 'Latest Week',

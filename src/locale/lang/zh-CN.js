@@ -23,10 +23,7 @@ export default {
     playlists: '歌单',
     albums: '专辑',
     artists: '艺人',
-    mvs: 'MV',
-    cloudDisk: '云盘',
     newPlayList: '新建歌单',
-    uploadSongs: '上传歌曲',
     playHistory: {
       title: '听歌排行',
       week: '最近一周',

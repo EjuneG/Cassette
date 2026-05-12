@@ -15,8 +15,6 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
-
 export default {
   name: 'ContextMenu',
   data() {
@@ -25,9 +23,6 @@ export default {
       top: '0px',
       left: '0px',
     };
-  },
-  computed: {
-    ...mapState(['player']),
   },
   methods: {
     setMenu(top, left) {

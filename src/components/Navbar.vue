@@ -6,13 +6,13 @@
       <div class="nav-left">
         <button-icon
           class="nav-button"
-          :title="$t('nav.back') || 'Back'"
+          :title="$t('nav.back')"
           @click="go('back')"
           ><svg-icon icon-class="arrow-left"
         /></button-icon>
         <button-icon
           class="nav-button"
-          :title="$t('nav.forward') || 'Forward'"
+          :title="$t('nav.forward')"
           @click="go('forward')"
           ><svg-icon icon-class="arrow-right"
         /></button-icon>
@@ -63,6 +63,7 @@
 <script>
 import { mapState } from 'vuex';
 import { isLooseLoggedIn, doLogout } from '@/utils/auth';
+import { resizeImage } from '@/utils/filters';
 
 import 'vscode-codicons/dist/codicon.css';
 
@@ -94,8 +95,11 @@ export default {
     },
     avatarUrl() {
       return this.data?.user?.avatarUrl && this.isLooseLoggedIn
-        ? `${this.data?.user?.avatarUrl}?param=512y512`
-        : 'http://s4.music.126.net/style/web2/img/default/default_avatar.jpg?param=60y60';
+        ? resizeImage(this.data.user.avatarUrl, 64)
+        : resizeImage(
+            'http://s4.music.126.net/style/web2/img/default/default_avatar.jpg',
+            64
+          );
     },
     hasCustomTitlebar() {
       return this.enableWin32Titlebar || this.enableLinuxTitlebar;

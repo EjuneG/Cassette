@@ -21,7 +21,7 @@
       <div class="block-now" @click.stop>
         <button
           class="cover-thumb"
-          :title="$t('player.lyrics') || 'Lyrics'"
+          :title="$t('player.lyrics')"
           @click="toggleLyrics"
         >
           <img
@@ -63,7 +63,7 @@
         </div>
         <div v-else class="track-meta">
           <div class="track-name idle-prompt">{{
-            $t('player.idlePrompt') || 'Pick a track'
+            $t('player.idlePrompt')
           }}</div>
           <div class="track-line">
             <span class="mono-stamp">CASSETTE LOADED</span>
@@ -180,7 +180,7 @@
         </div>
         <button
           class="ctl ctl-aux ctl-lyrics"
-          :title="$t('player.lyrics') || 'Lyrics'"
+          :title="$t('player.lyrics')"
           @click="toggleLyrics"
         >
           <svg-icon icon-class="arrow-up" />
@@ -237,6 +237,7 @@ export default {
     ...mapMutations(['toggleLyrics']),
     ...mapActions(['showToast', 'likeATrack']),
     resizeImage,
+    formatTrackTime,
     playPrevTrack() {
       this.player.playPrevTrack();
     },
@@ -250,9 +251,6 @@ export default {
       this.$route.name === 'next'
         ? this.$router.go(-1)
         : this.$router.push({ name: 'next' });
-    },
-    formatTrackTime(value) {
-      return formatTrackTime(value);
     },
     hasList() {
       return hasListSource();

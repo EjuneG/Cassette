@@ -27,15 +27,7 @@ export default {
     },
     color: {
       type: String,
-      default: 'blue',
-    },
-    backgroundColor: {
-      type: String,
-      default: '',
-    },
-    textColor: {
-      type: String,
-      default: '',
+      default: 'grey',
     },
     shape: {
       type: String,
@@ -44,16 +36,11 @@ export default {
   },
   computed: {
     buttonStyle() {
-      let styles = {
+      return {
         borderRadius: this.shape === 'round' ? '50%' : '8px',
         padding: `8px ${this.horizontalPadding}px`,
-        // height: "38px",
         width: this.shape === 'round' ? '38px' : 'auto',
       };
-      if (this.backgroundColor !== '')
-        styles.backgroundColor = this.backgroundColor;
-      if (this.textColor !== '') styles.color = this.textColor;
-      return styles;
     },
   },
 };

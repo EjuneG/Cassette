@@ -26,10 +26,7 @@ export default {
     playlists: 'Playlists',
     albums: 'Albums',
     artists: 'Artists',
-    mvs: 'MVs',
-    cloudDisk: 'Cloud Disk',
     newPlayList: 'New Playlist',
-    uploadSongs: 'Upload Songs',
     playHistory: {
       title: 'Play History',
       week: 'Latest Week',

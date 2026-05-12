@@ -1,7 +1,7 @@
 <template>
   <div id="app" :class="{ 'user-select-none': userSelectNone }">
     <Scrollbar v-show="!showLyrics" ref="scrollbar" />
-    <Navbar v-show="showNavbar" ref="navbar" />
+    <Navbar ref="navbar" />
     <main
       ref="main"
       :style="{ overflow: enableScrolling ? 'auto' : 'hidden' }"
@@ -89,9 +89,6 @@ export default {
         ) === false
       );
     },
-    showNavbar() {
-      return true;
-    },
   },
   created() {
     if (this.isElectron) ipcRenderer(this);
@@ -115,7 +112,6 @@ export default {
       if (isAccountLoggedIn()) {
         this.$store.dispatch('fetchLikedAlbums');
         this.$store.dispatch('fetchLikedArtists');
-        this.$store.dispatch('fetchLikedMVs');
         this.$store.dispatch('fetchCloudDisk');
       }
     },
