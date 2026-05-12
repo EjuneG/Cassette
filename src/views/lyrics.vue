@@ -194,55 +194,19 @@ export default {
       return this.romalyric.length > 0 && this.tlyric.length > 0;
     },
     lyricToShow() {
-      return this.lyricType === 'translation'
-        ? this.lyricWithTranslation
-        : this.lyricWithRomaPronunciation;
-    },
-    lyricWithTranslation() {
-      let ret = [];
-      const lyricFiltered = this.lyric.filter(({ content }) =>
-        Boolean(content)
+      const secondary =
+        this.lyricType === 'translation' ? this.tlyric : this.romalyric;
+      const secondaryByTime = new Map(
+        secondary.map(item => [item.rawTime, item.content])
       );
-      if (lyricFiltered.length) {
-        lyricFiltered.forEach(l => {
-          const { rawTime, time, content } = l;
-          const lyricItem = { time, content, contents: [content] };
-          const sameTimeTLyric = this.tlyric.find(
-            ({ rawTime: tLyricRawTime }) => tLyricRawTime === rawTime
-          );
-          if (sameTimeTLyric) {
-            const { content: tLyricContent } = sameTimeTLyric;
-            if (content) {
-              lyricItem.contents.push(tLyricContent);
-            }
-          }
-          ret.push(lyricItem);
+      return this.lyric
+        .filter(({ content }) => Boolean(content))
+        .map(({ time, content, rawTime }) => {
+          const item = { time, content, contents: [content] };
+          const extra = secondaryByTime.get(rawTime);
+          if (extra) item.contents.push(extra);
+          return item;
         });
-      }
-      return ret;
-    },
-    lyricWithRomaPronunciation() {
-      let ret = [];
-      const lyricFiltered = this.lyric.filter(({ content }) =>
-        Boolean(content)
-      );
-      if (lyricFiltered.length) {
-        lyricFiltered.forEach(l => {
-          const { rawTime, time, content } = l;
-          const lyricItem = { time, content, contents: [content] };
-          const sameTimeRomaLyric = this.romalyric.find(
-            ({ rawTime: tLyricRawTime }) => tLyricRawTime === rawTime
-          );
-          if (sameTimeRomaLyric) {
-            const { content: romaLyricContent } = sameTimeRomaLyric;
-            if (content) {
-              lyricItem.contents.push(romaLyricContent);
-            }
-          }
-          ret.push(lyricItem);
-        });
-      }
-      return ret;
     },
     lyricFontSize() {
       return {

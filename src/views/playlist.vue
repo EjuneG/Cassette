@@ -6,7 +6,7 @@
     >
       <Cover
         :id="playlist.id"
-        :image-url="resizeImage(playlist.coverImgUrl, 1024)"
+        :image-url="resizeImage(playlist.coverImgUrl, 384)"
         :show-play-button="true"
         :always-show-shadow="false"
         :click-cover-to-play="true"

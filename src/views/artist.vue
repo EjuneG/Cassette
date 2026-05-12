@@ -2,7 +2,7 @@
   <div v-show="show" class="artist-page">
     <div class="artist-info">
       <div class="head">
-        <img :src="resizeImage(artist.img1v1Url, 1024)" loading="lazy" />
+        <img :src="resizeImage(artist.img1v1Url, 320)" loading="lazy" />
       </div>
       <div>
         <div class="name">{{ artist.name }}</div>
@@ -258,11 +258,13 @@ export default {
       );
     },
     latestMV() {
-      const mv = this.mvs[0] || {};
+      const mv = this.mvs[0];
+      if (!mv) return { id: 0 };
+      const cover = mv.imgurl16v9 || mv.cover || mv.coverUrl;
       return {
         id: mv.id || mv.vid,
         name: mv.name || mv.title,
-        coverUrl: `${mv.imgurl16v9 || mv.cover || mv.coverUrl}?param=464y260`,
+        coverUrl: cover ? `${cover}?param=464y260` : '',
         publishTime: mv.publishTime,
       };
     },

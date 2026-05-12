@@ -3,7 +3,7 @@
     <div class="playlist-info">
       <Cover
         :id="album.id"
-        :image-url="resizeImage(album.picUrl, 1024)"
+        :image-url="resizeImage(album.picUrl, 384)"
         :show-play-button="true"
         :always-show-shadow="false"
         :click-cover-to-play="true"
