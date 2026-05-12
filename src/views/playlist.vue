@@ -382,24 +382,15 @@ export default {
       );
     },
     filteredTracks() {
-      return this.tracks.filter(
-        track =>
-          (track.name &&
-            track.name
-              .toLowerCase()
-              .includes(this.searchKeyWords.toLowerCase())) ||
-          (track.al.name &&
-            track.al.name
-              .toLowerCase()
-              .includes(this.searchKeyWords.toLowerCase())) ||
-          track.ar.find(
-            artist =>
-              artist.name &&
-              artist.name
-                .toLowerCase()
-                .includes(this.searchKeyWords.toLowerCase())
-          )
-      );
+      const kw = this.searchKeyWords.toLowerCase();
+      return this.tracks.filter(track => {
+        if (track.name && track.name.toLowerCase().includes(kw)) return true;
+        if (track.al.name && track.al.name.toLowerCase().includes(kw))
+          return true;
+        return track.ar.some(
+          artist => artist.name && artist.name.toLowerCase().includes(kw)
+        );
+      });
     },
   },
   created() {

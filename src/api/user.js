@@ -137,21 +137,6 @@ export function likedArtists(params) {
 }
 
 /**
- * 获取收藏的MV（需要登录）
- * 说明 : 调用此接口可获取到用户收藏的MV
- */
-export function likedMVs(params) {
-  return request({
-    url: '/mv/sublist',
-    method: 'get',
-    params: {
-      limit: params.limit,
-      timestamp: new Date().getTime(),
-    },
-  });
-}
-
-/**
  * 上传歌曲到云盘（需要登录）
  */
 export function uploadSong(file) {

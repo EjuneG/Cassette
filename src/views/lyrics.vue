@@ -241,23 +241,26 @@ export default {
   },
   created() {
     this.getLyric();
-    document.addEventListener('keydown', e => {
-      if (e.key === 'F11') {
-        e.preventDefault();
-        this.fullscreen();
-      }
-    });
-    document.addEventListener('fullscreenchange', () => {
-      this.isFullscreen = !!document.fullscreenElement;
-    });
+    document.addEventListener('keydown', this.onDocKeydown);
+    document.addEventListener('fullscreenchange', this.onFullscreenChange);
   },
   unmounted() {
     clearInterval(this.lyricsInterval);
+    document.removeEventListener('keydown', this.onDocKeydown);
+    document.removeEventListener('fullscreenchange', this.onFullscreenChange);
   },
   methods: {
     ...mapMutations(['toggleLyrics', 'updateModal']),
     ...mapActions(['likeATrack']),
     formatTrackTime,
+    onDocKeydown(e) {
+      if (e.key !== 'F11' || !this.showLyrics) return;
+      e.preventDefault();
+      this.fullscreen();
+    },
+    onFullscreenChange() {
+      this.isFullscreen = !!document.fullscreenElement;
+    },
     fullscreen() {
       if (document.fullscreenElement) {
         document.exitFullscreen();

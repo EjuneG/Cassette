@@ -13,6 +13,9 @@ import {
   userAccount,
 } from '@/api/user';
 
+const PLAY_HISTORY_TTL = 60_000;
+let lastPlayHistoryFetch = 0;
+
 export default {
   showToast({ state, commit }, text) {
     if (state.toast.timer !== null) {
@@ -155,7 +158,10 @@ export default {
     });
   },
   fetchPlayHistory: ({ state, commit }) => {
-    if (!isAccountLoggedIn()) return;
+    if (!isAccountLoggedIn()) return Promise.resolve();
+    if (Date.now() - lastPlayHistoryFetch < PLAY_HISTORY_TTL) {
+      return Promise.resolve();
+    }
     return Promise.all([
       userPlayHistory({ uid: state.data.user?.userId, type: 0 }),
       userPlayHistory({ uid: state.data.user?.userId, type: 1 }),
@@ -175,6 +181,7 @@ export default {
           name: 'playHistory',
           data: data,
         });
+        lastPlayHistoryFetch = Date.now();
       }
     });
   },
