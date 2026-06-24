@@ -23,11 +23,13 @@ const service = axios.create({
 service.interceptors.request.use(function (config) {
   if (!config.params) config.params = {};
   if (baseURL.length) {
-    if (
-      baseURL[0] !== '/' &&
-      !process.env.IS_ELECTRON &&
-      getCookie('MUSIC_U') !== null
-    ) {
+    if (baseURL[0] !== '/' && getCookie('MUSIC_U') !== null) {
+      // Inject MUSIC_U from the localStorage mirror (auth.js) in BOTH web and
+      // Electron. We used to rely on the Chromium cookie jar in Electron, but
+      // on Linux os_crypt intermittently fails to decrypt the encrypted
+      // MUSIC_U cookie across AppImage rebuilds/relaunches and Chromium then
+      // drops it, silently logging the user out. The localStorage copy is
+      // plaintext and survives, so authenticate with it directly.
       config.params.cookie = `MUSIC_U=${getCookie('MUSIC_U')};`;
     }
   } else {
