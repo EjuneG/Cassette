@@ -1,6 +1,6 @@
-productName: YesPlayMusic
+productName: Cassette
 appId: com.yesplaymusic.app
-copyright: Copyright © YesPlayMusic
+copyright: Copyright © EjuneG
 
 directories:
   output: dist_electron
@@ -23,7 +23,7 @@ extraMetadata:
 publish:
   - provider: github
     owner: EjuneG
-    repo: YesPlayMusic
+    repo: Cassette
     releaseType: release
 
 win:

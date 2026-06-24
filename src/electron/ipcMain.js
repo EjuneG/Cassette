@@ -273,7 +273,7 @@ export function initIpcMain(win, store, trayEventEmitter) {
       details: track.name + ' - ' + track.ar.map(ar => ar.name).join(','),
       state: track.al.name,
       largeImageKey: track.al.picUrl,
-      largeImageText: 'YesPlayMusic',
+      largeImageText: 'Cassette',
       smallImageKey: 'pause',
       smallImageText: 'Pause',
       instance: true,

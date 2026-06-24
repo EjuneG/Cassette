@@ -34,8 +34,8 @@ const excludeSaveKeys = ['_playing', '_progress', '_replaceTrackNonce'];
 
 function setTitle(track) {
   document.title = track
-    ? `${track.name} · ${track.ar[0].name} - YesPlayMusic`
-    : 'YesPlayMusic';
+    ? `${track.name} · ${track.ar[0].name} - Cassette`
+    : 'Cassette';
   if (isCreateTray) {
     electronAPI?.send('updateTrayTooltip', document.title);
   }

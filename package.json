@@ -1,9 +1,15 @@
 {
-  "name": "yesplaymusic",
-  "version": "0.5.2",
+  "name": "cassette",
+  "version": "1.0.0",
   "private": true,
-  "description": "A third party music player for Netease Music",
-  "author": "qier222<qier222@outlook.com>",
+  "description": "Cassette — a third-party Netease Cloud Music player with the Studio Cassette UI. Hard fork of qier222/YesPlayMusic.",
+  "author": "EjuneG <ejuneg6@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/EjuneG/YesPlayMusic#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EjuneG/YesPlayMusic.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

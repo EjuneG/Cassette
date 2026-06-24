@@ -150,7 +150,7 @@ export function createMenu(win, store) {
               {
                 role: 'window',
                 id: 'window',
-                label: 'YesPlayMusic',
+                label: 'Cassette',
                 type: 'checkbox',
                 checked: true,
                 click: () => {
@@ -172,7 +172,7 @@ export function createMenu(win, store) {
         {
           label: 'GitHub',
           click: async () => {
-            await shell.openExternal('https://github.com/qier222/YesPlayMusic');
+            await shell.openExternal('https://github.com/EjuneG/YesPlayMusic');
           },
         },
         {

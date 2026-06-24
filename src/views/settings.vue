@@ -716,7 +716,11 @@
       <div class="footer">
         <p class="author"
           >MADE BY
-          <a href="http://github.com/qier222" target="_blank">QIER222</a></p
+          <a href="http://github.com/EjuneG" target="_blank">EJUNEG</a>
+          · FORKED FROM
+          <a href="https://github.com/qier222/YesPlayMusic" target="_blank"
+            >YESPLAYMUSIC</a
+          ></p
         >
         <p class="version">v{{ version }}</p>
 

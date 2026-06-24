@@ -8,7 +8,7 @@ export function createMpris(window) {
 
   const player = Player({
     name: 'yesplaymusic',
-    identity: 'YesPlayMusic',
+    identity: 'Cassette',
   });
 
   player.on('next', () => renderer.send('next'));
