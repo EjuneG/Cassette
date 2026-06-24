@@ -104,9 +104,16 @@ export default {
         this.player.playOrPause();
       }
     },
-    fetchData() {
+    async fetchData() {
       if (!isLooseLoggedIn()) return;
-      this.$store.dispatch('fetchLikedSongs');
+      // Self-heal: if logged in at the account level but the profile is missing
+      // (e.g. session restored from a cookie without going through the login
+      // flow), fetch it first — userId drives the liked-songs / play-history
+      // fetches below, and without it they hit the API with no uid and fail.
+      if (isAccountLoggedIn() && !this.$store.state.data.user?.userId) {
+        await this.$store.dispatch('fetchUserProfile');
+      }
+      await this.$store.dispatch('fetchLikedSongs');
       this.$store.dispatch('fetchLikedSongsWithDetails');
       this.$store.dispatch('fetchLikedPlaylist');
       if (isAccountLoggedIn()) {

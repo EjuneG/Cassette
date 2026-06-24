@@ -23,14 +23,15 @@ const service = axios.create({
 service.interceptors.request.use(function (config) {
   if (!config.params) config.params = {};
   if (baseURL.length) {
-    if (baseURL[0] !== '/' && getCookie('MUSIC_U') !== null) {
-      // Inject MUSIC_U from the localStorage mirror (auth.js) in BOTH web and
-      // Electron. We used to rely on the Chromium cookie jar in Electron, but
-      // on Linux os_crypt intermittently fails to decrypt the encrypted
-      // MUSIC_U cookie across AppImage rebuilds/relaunches and Chromium then
-      // drops it, silently logging the user out. The localStorage copy is
-      // plaintext and survives, so authenticate with it directly.
-      config.params.cookie = `MUSIC_U=${getCookie('MUSIC_U')};`;
+    // Send MUSIC_U from the plaintext localStorage mirror (auth.js). In
+    // Electron the API base is the relative `/api` proxy, so the old
+    // `baseURL[0] !== '/'` guard skipped this and we relied on the Chromium
+    // cookie jar — but on Linux os_crypt intermittently drops the encrypted
+    // cookie across AppImage rebuilds, logging the user out. Inject the token
+    // as a param in Electron regardless of base; keep web's original behaviour.
+    const musicU = getCookie('MUSIC_U');
+    if (musicU !== null && (process.env.IS_ELECTRON || baseURL[0] !== '/')) {
+      config.params.cookie = `MUSIC_U=${musicU};`;
     }
   } else {
     console.error("You must set up the baseURL in the service's config");
