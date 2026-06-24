@@ -409,12 +409,15 @@ export default {
   color: var(--color-primary);
   border-radius: 8px;
   margin-top: 24px;
-  transition: 0.2s;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
   padding: 8px;
   width: 100%;
   width: 300px;
   &:hover {
-    transform: scale(1.06);
+    background-color: oklch(64% 0.18 38 / 0.28);
+    color: var(--tape-orange-bright);
   }
   &:active {
     transform: scale(0.94);

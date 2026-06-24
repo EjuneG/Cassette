@@ -1518,9 +1518,10 @@ button {
   padding: 8px 12px 8px 12px;
   font-weight: 600;
   border-radius: 8px;
-  transition: 0.2s;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
   &:hover {
-    transform: scale(1.06);
+    background-color: var(--housing-divider);
   }
   &:active {
     transform: scale(0.94);

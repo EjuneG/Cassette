@@ -419,12 +419,13 @@ export default {
   flex-shrink: 0;
   padding: 0;
   cursor: pointer;
-  transition: transform var(--motion-fast) var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: filter var(--motion-fast) var(--ease-out);
   }
 
   .cover-empty {
@@ -435,7 +436,10 @@ export default {
   }
 
   &:hover {
-    transform: scale(1.04);
+    border-color: oklch(96% 0.005 60 / 0.45);
+    img {
+      filter: brightness(1.08);
+    }
   }
 }
 
@@ -557,8 +561,7 @@ export default {
   }
 
   &:hover {
-    background: var(--tape-orange-ink);
-    transform: scale(1.04);
+    background: oklch(98% 0.008 60);
   }
 }
 

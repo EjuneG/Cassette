@@ -293,7 +293,6 @@ nav.has-custom-titlebar {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--motion-fast) var(--ease-out);
 
   .avatar {
     width: 26px;
@@ -302,10 +301,13 @@ nav.has-custom-titlebar {
     border: 1px solid var(--housing-hairline);
     -webkit-user-drag: none;
     user-select: none;
+    transition: border-color var(--motion-fast) var(--ease-out),
+      filter var(--motion-fast) var(--ease-out);
   }
 
-  &:hover {
-    transform: scale(1.06);
+  &:hover .avatar {
+    border-color: var(--ink-soft);
+    filter: brightness(1.08);
   }
 }
 </style>

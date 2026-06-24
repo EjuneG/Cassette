@@ -249,15 +249,20 @@ button {
   align-items: center;
   padding: 8px;
   background: transparent;
-  border-radius: 25%;
-  transition: transform 0.2s;
+  border-radius: 8px;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
   .svg-icon {
     height: 16px;
     width: 16px;
     color: var(--ink-soft);
   }
   &:hover {
-    transform: scale(1.12);
+    background-color: var(--housing-divider);
+    .svg-icon {
+      color: var(--ink-strong);
+    }
   }
   &:active {
     transform: scale(0.96);
@@ -400,7 +405,7 @@ button {
 }
 
 .track.focus {
-  transition: all 0.3s;
+  transition: background-color var(--motion-fast) var(--ease-out);
   background: var(--color-secondary-bg);
 }
 

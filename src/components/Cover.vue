@@ -1,12 +1,13 @@
 <template>
   <div
     class="cover"
-    :class="{ 'cover-hover': coverHover }"
+    :class="{ 'cover-hover': coverHover, 'is-focused': focus && coverHover }"
     @mouseover="focus = true"
     @mouseleave="focus = false"
     @click="clickCoverToPlay ? play() : goTo()"
   >
-    <div class="cover-container">
+    <div class="cover-container" :class="{ artist: type === 'artist' }">
+      <img :src="imageUrl" :style="imageStyles" loading="lazy" />
       <div class="shade">
         <button
           v-show="focus"
@@ -16,14 +17,6 @@
           ><svg-icon icon-class="play" />
         </button>
       </div>
-      <img :src="imageUrl" :style="imageStyles" loading="lazy" />
-      <transition v-if="coverHover || alwaysShowShadow" name="fade">
-        <div
-          v-show="focus || alwaysShowShadow"
-          class="shadow"
-          :style="shadowStyles"
-        ></div>
-      </transition>
     </div>
   </div>
 </template>
@@ -64,12 +57,6 @@ export default {
       styles.height = this.playButtonSize + '%';
       return styles;
     },
-    shadowStyles() {
-      let styles = {};
-      styles.backgroundImage = `url(${this.imageUrl})`;
-      if (this.type === 'artist') styles.borderRadius = '50%';
-      return styles;
-    },
   },
   methods: {
     play() {
@@ -91,81 +78,70 @@ export default {
 <style lang="scss" scoped>
 .cover {
   position: relative;
-  transition: transform 0.3s;
 }
 .cover-container {
   position: relative;
+  border-radius: 0.75em;
+
+  &.artist {
+    border-radius: 50%;
+  }
 }
+
 img {
+  display: block;
   border-radius: 0.75em;
   width: 100%;
   user-select: none;
   aspect-ratio: 1 / 1;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--housing-hairline);
+  transition: filter var(--motion-fast) var(--ease-out);
 }
 
 .cover-hover {
   &:hover {
     cursor: pointer;
-    /* transform: scale(1.02); */
   }
+}
+
+.cover-hover.is-focused img {
+  filter: brightness(0.82);
 }
 
 .shade {
   position: absolute;
-  top: 0;
-  height: calc(100% - 3px);
-  width: 100%;
-  background: transparent;
+  inset: 0;
   display: flex;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
 }
+
 .play-button {
+  pointer-events: auto;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
-  backdrop-filter: blur(8px);
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--tape-orange-ink);
+  background: var(--tape-orange);
+  border: none;
   height: 22%;
   width: 22%;
   border-radius: 50%;
-  cursor: default;
-  transition: 0.2s;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+
   .svg-icon {
-    width: 50%;
-    margin: {
-      left: 4px;
-    }
+    width: 44%;
+    margin-left: 3px;
   }
+
   &:hover {
-    background: rgba(255, 255, 255, 0.28);
+    background: var(--tape-orange-bright);
   }
   &:active {
     transform: scale(0.94);
   }
-}
-
-.shadow {
-  position: absolute;
-  top: 12px;
-  height: 100%;
-  width: 100%;
-  filter: blur(16px) opacity(0.6);
-  transform: scale(0.92, 0.96);
-  z-index: -1;
-  background-size: cover;
-  border-radius: 0.75em;
-  aspect-ratio: 1 / 1;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s;
-}
-.fade-enter-from, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
 }
 </style>

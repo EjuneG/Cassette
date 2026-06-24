@@ -59,14 +59,13 @@ button {
   background-color: var(--housing-elev);
   color: var(--ink-strong);
   margin-right: 12px;
-  transition: 0.2s;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
   user-select: none;
   .svg-icon {
     width: 16px;
     height: 16px;
-  }
-  &:hover {
-    transform: scale(1.06);
   }
   &:active {
     transform: scale(0.94);
@@ -75,13 +74,24 @@ button {
 button.orange {
   background-color: var(--tape-orange-soft);
   color: var(--tape-orange);
+  &:hover {
+    background-color: oklch(64% 0.18 38 / 0.28);
+    color: var(--tape-orange-bright);
+  }
 }
 button.grey {
   background-color: var(--color-secondary-bg);
   color: var(--color-text);
   opacity: 0.78;
+  &:hover {
+    background-color: var(--housing-divider);
+    opacity: 1;
+  }
 }
 button.transparent {
   background-color: transparent;
+  &:hover {
+    background-color: var(--housing-elev);
+  }
 }
 </style>

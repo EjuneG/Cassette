@@ -383,8 +383,7 @@ export default {
     border-radius: 999px;
     background: var(--tape-orange);
     color: var(--tape-orange-ink);
-    transition: transform var(--motion-fast) var(--ease-out),
-      box-shadow var(--motion-fast) var(--ease-out);
+    transition: background-color var(--motion-fast) var(--ease-out);
 
     :deep(.svg-icon) {
       width: 12px;
@@ -393,8 +392,7 @@ export default {
     }
 
     &:hover {
-      transform: scale(1.06);
-      box-shadow: 0 6px 16px -6px var(--tape-orange);
+      background: var(--tape-orange-bright);
     }
   }
 }

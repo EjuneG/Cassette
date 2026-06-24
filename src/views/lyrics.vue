@@ -442,16 +442,16 @@ export default {
   padding: 0;
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform var(--motion-fast) var(--ease-out);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: filter var(--motion-fast) var(--ease-out);
   }
 
-  &:hover {
-    transform: scale(1.04);
+  &:hover img {
+    filter: brightness(1.08);
   }
 }
 
