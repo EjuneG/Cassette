@@ -35,6 +35,14 @@ import { spawn } from 'child_process';
 import clc from 'cli-color';
 import { initMainErrorReporter } from '@/utils/errorReporter';
 
+// Pin the Electron runtime identity to the original name. The userData dir
+// (~/.config/yesplaymusic) and the OS keyring entry that encrypts cookies are
+// both derived from app.getName(); renaming package.json `name` to "cassette"
+// silently orphaned the existing login/settings/cache. Keep this as a
+// preserved functional identifier (like appId) — brand-facing names stay
+// "Cassette". Must run before any app.getPath('userData') / app ready.
+app.setName('yesplaymusic');
+
 initMainErrorReporter();
 
 const log = text => {
