@@ -51,7 +51,10 @@
             </div>
           </div>
         </div>
-        <div v-show="mode !== 'qrCode'" class="input-box">
+        <div
+          v-show="mode !== 'qrCode' && mode !== 'cookie'"
+          class="input-box"
+        >
           <div class="container" :class="{ active: inputFocus === 'password' }">
             <svg-icon icon-class="lock" />
             <div class="inputs">
@@ -68,6 +71,25 @@
               />
             </div>
           </div>
+        </div>
+
+        <div v-show="mode === 'cookie'" class="input-box cookie-box">
+          <div class="container" :class="{ active: inputFocus === 'cookie' }">
+            <svg-icon icon-class="lock" />
+            <div class="inputs">
+              <textarea
+                id="cookie"
+                v-model="cookieInput"
+                placeholder="粘贴 MUSIC_U（或整段 Cookie）"
+                spellcheck="false"
+                @focus="inputFocus = 'cookie'"
+                @blur="inputFocus = ''"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+        <div v-show="mode === 'cookie'" class="cookie-hint">
+          浏览器登录 music.163.com → F12 → Application → Cookies → 复制 MUSIC_U
         </div>
 
         <div v-show="mode == 'qrCode'">
@@ -100,6 +122,10 @@
         <span v-show="mode !== 'qrCode'">|</span>
         <a v-show="mode !== 'qrCode'" @click="changeMode('qrCode')">
           二维码登录
+        </a>
+        <span v-show="mode !== 'cookie'">|</span>
+        <a v-show="mode !== 'cookie'" @click="changeMode('cookie')">
+          Cookie 登录
         </a>
       </div>
       <div
@@ -141,6 +167,7 @@ export default {
       qrCodeSvg: '',
       qrCodeCheckInterval: null,
       qrCodeInformation: '打开网易云音乐APP扫码登录',
+      cookieInput: '',
     };
   },
   computed: {
@@ -185,6 +212,7 @@ export default {
       return true;
     },
     login() {
+      if (this.mode === 'cookie') return this.loginWithCookie();
       if (this.mode === 'phone') {
         this.processing = this.validatePhone();
         if (!this.processing) return;
@@ -231,6 +259,37 @@ export default {
         this.processing = false;
         nativeAlert(data.msg ?? data.message ?? '账号或密码错误，请检查');
       }
+    },
+    loginWithCookie() {
+      const raw = this.cookieInput.trim();
+      if (!raw) {
+        nativeAlert('请先粘贴 MUSIC_U Cookie');
+        return;
+      }
+      // Accept a bare token, "MUSIC_U=xxx", or a whole Cookie header.
+      const match = raw.match(/MUSIC_U=([^;,\s]+)/i);
+      const musicU = match ? match[1] : raw.replace(/\s/g, '');
+      this.processing = true;
+      setCookies(`MUSIC_U=${musicU}`);
+      this.updateData({ key: 'loginMode', value: 'account' });
+      this.$store
+        .dispatch('fetchUserProfile')
+        .then(() => {
+          if (this.$store.state.data.user?.userId) {
+            this.$store
+              .dispatch('fetchLikedPlaylist')
+              .finally(() => this.$router.push({ path: '/library' }));
+          } else {
+            this.processing = false;
+            this.updateData({ key: 'loginMode', value: null });
+            nativeAlert('Cookie 无效或已过期，请从浏览器重新获取 MUSIC_U');
+          }
+        })
+        .catch(error => {
+          this.processing = false;
+          this.updateData({ key: 'loginMode', value: null });
+          nativeAlert(`登录失败：${error}`);
+        });
     },
     getQrCodeKey() {
       return loginQrCodeKey().then(result => {
@@ -397,6 +456,42 @@ export default {
       color: var(--color-primary);
     }
   }
+}
+
+.input-box.cookie-box .container {
+  height: auto;
+  align-items: flex-start;
+  padding: 12px 0;
+}
+.input-box.cookie-box .svg-icon {
+  margin-top: 3px;
+}
+.input-box textarea {
+  border: none;
+  background: transparent;
+  width: 100%;
+  height: 76px;
+  resize: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--color-text);
+  word-break: break-all;
+}
+.input-box textarea::placeholder {
+  font-family: inherit;
+  color: var(--color-text);
+  opacity: 0.38;
+}
+
+.cookie-hint {
+  width: 300px;
+  margin: -4px 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text);
+  opacity: 0.5;
 }
 
 .confirm button {
