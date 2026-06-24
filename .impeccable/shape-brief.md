@@ -1,4 +1,4 @@
-# Design Brief: YesPlayMusic — App Shell Redesign
+# Design Brief: Cassette — App Shell Redesign
 
 **Status**: ✅ Approved 2026-05-10. Open Questions resolved (see Section 10). Hand-off-able to `/impeccable craft`.
 
@@ -10,7 +10,7 @@
 
 ## 1. Feature Summary
 
-Redesign the entire YesPlayMusic app shell — Navbar, Library home, detail pages (Playlist / Album / Artist), Lyrics fullscreen, Settings (token-swap only) — to swap the Apple Music–derived visual language for the **Studio Cassette** aesthetic established in `DESIGN.md`. The defining architectural move is replacing the current bottom-bar Player with a **compact "tape compartment"** — a slim ~88px region wearing the saturated Tape Orange-Red across the full width. **Mass and color carry the cassette metaphor**, not literal reel imagery. The Library home is reorganized around a "Side A / Side B" cassette metaphor and trimmed of unused tabs.
+Redesign the entire Cassette app shell — Navbar, Library home, detail pages (Playlist / Album / Artist), Lyrics fullscreen, Settings (token-swap only) — to swap the Apple Music–derived visual language for the **Studio Cassette** aesthetic established in `DESIGN.md`. The defining architectural move is replacing the current bottom-bar Player with a **compact "tape compartment"** — a slim ~88px region wearing the saturated Tape Orange-Red across the full width. **Mass and color carry the cassette metaphor**, not literal reel imagery. The Library home is reorganized around a "Side A / Side B" cassette metaphor and trimmed of unused tabs.
 
 ## 2. Primary User Action
 

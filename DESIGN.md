@@ -1,10 +1,10 @@
 <!-- SEED: re-run /impeccable document once there's code to capture the actual tokens and components. -->
 ---
-name: YesPlayMusic
+name: Cassette
 description: A daily-use NetEase Cloud Music client that feels like a hand-built object on the desk.
 ---
 
-# Design System: YesPlayMusic
+# Design System: Cassette
 
 ## 1. Overview
 

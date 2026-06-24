@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-YesPlayMusic — a third-party Netease Cloud Music (网易云音乐) player. Runs as both a web app and an Electron desktop client (macOS/Windows/Linux). Built with Vue 3 + Vuex 4 + Vue Router 4 + Howler.js + Vite + Electron 41.
+Cassette — a third-party Netease Cloud Music (网易云音乐) player. Hard fork of the archived [qier222/YesPlayMusic](https://github.com/qier222/YesPlayMusic), now maintained independently as `EjuneG/Cassette`. Runs as both a web app and an Electron desktop client (macOS/Windows/Linux). Built with Vue 3 + Vuex 4 + Vue Router 4 + Howler.js + Vite + Electron 41.
+
+> Note: some internal identifiers (Electron `appId` `com.yesplaymusic.app`, IndexedDB name `yesplaymusic`, MPRIS bus name, the `~/Applications/YesPlayMusic.AppImage` install path) intentionally keep the old name for data continuity — do not rename them.
 
 ## Design Context
 
