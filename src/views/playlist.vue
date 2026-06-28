@@ -134,7 +134,7 @@
     </div>
 
     <div v-if="isLikeSongsPage" class="user-info">
-      <h1>
+      <h1 @click.right="openMenu">
         <img
           class="avatar"
           :src="resizeImage(data.user.avatarUrl)"
@@ -200,6 +200,9 @@
       <div class="item" @click="searchInPlaylist()">{{
         $t('contextMenu.searchInPlaylist')
       }}</div>
+      <div class="item" @click="copyPlaylist()"
+        >复制歌单到剪贴板（给 AI 推歌）</div
+      >
       <div
         v-if="playlist.creator.userId === data.user.userId"
         class="item"
@@ -480,6 +483,58 @@ export default {
     },
     openMenu(e) {
       this.$refs.playlistMenu.openMenu(e);
+    },
+    // Fetch every track in the playlist, in order — not just the lazily
+    // loaded first batch — so the exported list is complete.
+    async getAllTracksForExport() {
+      const allIDs = (this.playlist.trackIds || []).map(t => t.id);
+      // Already fully loaded? Use what we have and skip the extra requests.
+      if (allIDs.length === 0 || this.tracks.length >= allIDs.length) {
+        return this.tracks;
+      }
+      // Netease caps song/detail around ~1000 ids per call; chunk to be safe.
+      const chunkSize = 500;
+      const songs = [];
+      for (let i = 0; i < allIDs.length; i += chunkSize) {
+        const chunk = allIDs.slice(i, i + chunkSize);
+        const data = await getTrackDetail(chunk.join(','));
+        songs.push(...data.songs);
+      }
+      return songs;
+    },
+    formatPlaylistForExport(tracks) {
+      const title = this.specialPlaylistInfo
+        ? this.specialPlaylistInfo.name
+        : this.isLikeSongsPage
+        ? `${this.data.user.nickname}${this.$t('library.sLikedSongs')}`
+        : this.playlist.name;
+      const header = `歌单《${title}》，共 ${tracks.length} 首：`;
+      const lines = tracks.map((track, index) => {
+        const artists = (track.ar || track.artists || [])
+          .map(a => a.name)
+          .filter(Boolean)
+          .join('/');
+        const album = (track.al || track.album || {}).name || '';
+        return `${index + 1}. ${track.name} - ${artists}${
+          album ? `（${album}）` : ''
+        }`;
+      });
+      return [header, ...lines].join('\n');
+    },
+    async copyPlaylist() {
+      try {
+        const tracks = await this.getAllTracksForExport();
+        if (!tracks || tracks.length === 0) {
+          this.showToast('歌单是空的，没有可复制的内容');
+          return;
+        }
+        const text = this.formatPlaylistForExport(tracks);
+        await navigator.clipboard.writeText(text);
+        this.showToast(`已复制 ${tracks.length} 首歌，去粘贴给 AI 吧`);
+      } catch (error) {
+        this.showToast('复制失败，请重试');
+        console.error('copyPlaylist failed:', error);
+      }
     },
     deletePlaylist() {
       if (!isAccountLoggedIn()) {
