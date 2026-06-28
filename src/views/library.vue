@@ -95,15 +95,10 @@
       </div>
 
       <div v-show="currentTab === 'playlists'" class="drawer-body">
-        <CoverRow
+        <LibraryCatalog
           v-if="liked.playlists.length > 1"
           :items="filterPlaylists"
           type="playlist"
-          sub-text="creator"
-          :show-play-button="true"
-          :column-number="6"
-          gap="28px 18px"
-          sub-text-font-size="13px"
         />
         <div v-else class="empty-block">
           <span class="mono-stamp">No playlists.</span>
@@ -111,15 +106,10 @@
       </div>
 
       <div v-show="currentTab === 'albums'" class="drawer-body">
-        <CoverRow
+        <LibraryCatalog
           v-if="liked.albums && liked.albums.length > 0"
           :items="liked.albums"
           type="album"
-          sub-text="artist"
-          :show-play-button="true"
-          :column-number="6"
-          gap="28px 18px"
-          sub-text-font-size="13px"
         />
         <div v-else class="empty-block">
           <span class="mono-stamp">No albums.</span>
@@ -127,14 +117,10 @@
       </div>
 
       <div v-show="currentTab === 'artists'" class="drawer-body">
-        <CoverRow
+        <LibraryCatalog
           v-if="liked.artists && liked.artists.length > 0"
           :items="liked.artists"
           type="artist"
-          :show-play-button="true"
-          :column-number="6"
-          gap="28px 18px"
-          sub-text-font-size="13px"
         />
         <div v-else class="empty-block">
           <span class="mono-stamp">No artists.</span>
@@ -175,12 +161,12 @@ import NProgress from 'nprogress';
 import { locale } from '@/locale';
 
 import ContextMenu from '@/components/ContextMenu.vue';
-import CoverRow from '@/components/CoverRow.vue';
+import LibraryCatalog from '@/components/LibraryCatalog.vue';
 import SvgIcon from '@/components/SvgIcon.vue';
 
 export default {
   name: 'Library',
-  components: { SvgIcon, CoverRow, ContextMenu },
+  components: { SvgIcon, LibraryCatalog, ContextMenu },
   inject: ['scrollToMain', 'restoreScrollPosition'],
   data() {
     return {
@@ -524,27 +510,6 @@ export default {
 
 .drawer-body {
   padding-top: 4px;
-}
-
-/* Tighten the CoverRow text and shrink covers slightly to match the
-   Studio Cassette density. Reaching across the scoped border with :deep().
-   The CoverRow's columnNumber prop controls grid; here we trim text size
-   and meta opacity for visual consistency with the new tokens. */
-.drawer-body :deep(.cover-row) {
-  .text {
-    margin-top: 8px;
-  }
-  .title {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    color: var(--ink-strong);
-  }
-  .info {
-    font-size: 11px;
-    color: var(--ink-soft);
-    opacity: 1;
-  }
 }
 
 .empty-block {
