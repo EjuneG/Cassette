@@ -51,10 +51,7 @@
             </div>
           </div>
         </div>
-        <div
-          v-show="mode !== 'qrCode' && mode !== 'cookie'"
-          class="input-box"
-        >
+        <div v-show="mode !== 'qrCode' && mode !== 'cookie'" class="input-box">
           <div class="container" :class="{ active: inputFocus === 'password' }">
             <svg-icon icon-class="lock" />
             <div class="inputs">
