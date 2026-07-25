@@ -37,6 +37,10 @@ nsis:
   oneClick: true
   perMachine: true
   deleteAppDataOnUninstall: true
+  # Default is "Cassette Setup 1.0.0.exe" — the spaces do not match the
+  # URL-safe filename electron-updater writes into latest.yml, so auto-update
+  # 404s unless the asset is renamed by hand before upload.
+  artifactName: ${productName}-Setup-${version}.${ext}
 
 linux:
   target:
