@@ -5,6 +5,14 @@
       <LinuxTitlebar v-if="enableLinuxTitlebar" />
       <div class="nav-left">
         <button-icon
+          class="nav-button home-button"
+          :class="{ active: isHome }"
+          :title="`${$t('nav.home')} (H)`"
+          @click="goHome"
+          ><svg-icon icon-class="home"
+        /></button-icon>
+        <span class="nav-divider" />
+        <button-icon
           class="nav-button"
           :title="$t('nav.back')"
           @click="go('back')"
@@ -89,7 +97,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['settings', 'data']),
+    ...mapState(['settings', 'data', 'showLyrics']),
     isLooseLoggedIn() {
       return isLooseLoggedIn();
     },
@@ -103,6 +111,9 @@ export default {
     },
     hasCustomTitlebar() {
       return this.enableWin32Titlebar || this.enableLinuxTitlebar;
+    },
+    isHome() {
+      return this.$route.name === 'library';
     },
   },
   created() {
@@ -123,6 +134,17 @@ export default {
     go(where) {
       if (where === 'back') this.$router.go(-1);
       else this.$router.go(1);
+    },
+    goHome() {
+      // Already home: treat the button as "scroll back to the top" instead of
+      // pushing a duplicate history entry.
+      if (this.isHome) {
+        document
+          .querySelector('main')
+          ?.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      this.$router.push({ name: 'library' });
     },
     doSearch() {
       if (!this.keywords) return;
@@ -159,9 +181,16 @@ export default {
       }
     },
     handleGlobalKeydown(e) {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (this.showLyrics) return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === '/') {
         e.preventDefault();
         this.$refs.searchInput?.focus();
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        this.goHome();
       }
     },
   },
@@ -222,6 +251,30 @@ nav.has-custom-titlebar {
     width: 16px;
     height: 16px;
   }
+}
+
+// The anchor back to the library — worn in Tape Orange while you are there.
+.home-button {
+  :deep(.svg-icon) {
+    width: 15px;
+    height: 15px;
+  }
+
+  &.active {
+    color: var(--tape-orange);
+
+    &:hover {
+      color: var(--tape-orange-bright);
+      background: var(--tape-orange-soft);
+    }
+  }
+}
+
+.nav-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--housing-divider);
 }
 
 .nav-right {
