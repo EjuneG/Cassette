@@ -89,7 +89,7 @@
 <script>
 import ArtistsInLine from '@/components/ArtistsInLine.vue';
 import ExplicitSymbol from '@/components/ExplicitSymbol.vue';
-import { mapState } from 'vuex';
+import { mapGetters } from 'vuex';
 import { formatTime } from '@/utils/filters';
 import { isNil } from 'lodash';
 
@@ -129,7 +129,7 @@ export default {
   },
 
   computed: {
-    ...mapState(['settings', 'liked']),
+    ...mapGetters(['likedSongIdSet']),
     track() {
       return this.type === 'cloudDisk'
         ? this.trackProp.simpleSong
@@ -184,7 +184,7 @@ export default {
       return this.type === 'playlist';
     },
     isLiked() {
-      return this.liked.songs.includes(this.track?.id);
+      return this.likedSongIdSet.has(this.track?.id);
     },
     isPlaying() {
       return this.$store.state.player.currentTrack.id === this.track?.id;

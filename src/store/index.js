@@ -2,6 +2,7 @@ import { createStore } from 'vuex';
 import state from './state';
 import mutations from './mutations';
 import actions from './actions';
+import getters from './getters';
 import Player from '@/utils/Player';
 // vuex 自定义插件
 import saveToLocalStorage from './plugins/localStorage';
@@ -16,6 +17,7 @@ const options = {
   state,
   mutations,
   actions,
+  getters,
   plugins,
 };
 

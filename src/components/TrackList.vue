@@ -101,12 +101,12 @@
 
     <div :style="listStyles">
       <TrackListItem
-        v-for="(track, index) in tracks"
+        v-for="(track, index) in visibleTracks"
         :key="itemKey === 'id' ? track.id : `${track.id}${index}`"
         :track-prop="track"
         :track-no="index + 1"
         :highlight-playing-track="highlightPlayingTrack"
-        :selected="selectedIndexes.includes(index)"
+        :selected="selectedSet.has(index)"
         :type="type"
         :album-object="albumObject"
         :right-clicked-track-id="rightClickedTrack.id"
@@ -152,6 +152,12 @@ import { resizeImage } from '@/utils/filters';
 import TrackListItem from '@/components/TrackListItem.vue';
 import ContextMenu from '@/components/ContextMenu.vue';
 import { locale } from '@/locale';
+
+// 渐进挂载：一千首歌一次性 v-for 出来会产生一个几百毫秒的长任务，
+// 主线程被占住，页面在数据到达后仍然一片空白直到全部挂完。
+// 先挂够一屏，剩下的按帧补齐——首帧几乎立刻可见，补齐过程中滚动依然跟手。
+const FIRST_BATCH_SIZE = 30;
+const BATCH_SIZE = 80;
 
 export default {
   name: 'TrackList',
@@ -219,10 +225,20 @@ export default {
       selectedIndexes: [],
       lastClickedIndex: -1,
       listStyles: {},
+      renderedCount: 0,
+      rafId: null,
     };
   },
   computed: {
     ...mapState(['liked', 'player']),
+    visibleTracks() {
+      return this.renderedCount >= this.tracks.length
+        ? this.tracks
+        : this.tracks.slice(0, this.renderedCount);
+    },
+    selectedSet() {
+      return new Set(this.selectedIndexes);
+    },
     hasSelection() {
       return this.selectedIndexes.length > 1;
     },
@@ -247,6 +263,24 @@ export default {
         : this.rightClickedTrack;
     },
   },
+  watch: {
+    tracks: {
+      immediate: true,
+      handler(tracks) {
+        const total = tracks.length;
+        // 列表缩短（搜索过滤、删除歌曲）时不必重新分批，直接跟上即可
+        if (total <= this.renderedCount) {
+          this.renderedCount = total;
+          this.stopProgressiveRender();
+          return;
+        }
+        if (this.renderedCount === 0) {
+          this.renderedCount = Math.min(FIRST_BATCH_SIZE, total);
+        }
+        this.scheduleProgressiveRender();
+      },
+    },
+  },
   created() {
     if (this.type === 'tracklist') {
       this.listStyles = {
@@ -259,11 +293,34 @@ export default {
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this.handleKeydown);
+    this.stopProgressiveRender();
   },
   methods: {
     ...mapMutations(['updateModal']),
     ...mapActions(['nextTrack', 'showToast', 'likeATrack']),
     resizeImage,
+    // --- 渐进挂载 ---
+    scheduleProgressiveRender() {
+      if (this.rafId !== null) return;
+      const step = () => {
+        this.rafId = null;
+        if (this.renderedCount >= this.tracks.length) return;
+        this.renderedCount = Math.min(
+          this.renderedCount + BATCH_SIZE,
+          this.tracks.length
+        );
+        if (this.renderedCount < this.tracks.length) {
+          this.rafId = requestAnimationFrame(step);
+        }
+      };
+      this.rafId = requestAnimationFrame(step);
+    },
+    stopProgressiveRender() {
+      if (this.rafId !== null) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+    },
     // --- 键盘快捷键 ---
     handleKeydown(e) {
       if (e.target.tagName === 'INPUT') return;

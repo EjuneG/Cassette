@@ -1,7 +1,7 @@
 <template>
-  <div v-show="show" class="playlist">
+  <div class="playlist">
     <div
-      v-if="specialPlaylistInfo === undefined && !isLikeSongsPage"
+      v-if="show && specialPlaylistInfo === undefined && !isLikeSongsPage"
       class="playlist-info"
     >
       <Cover
@@ -91,7 +91,10 @@
         </div>
       </div>
     </div>
-    <div v-if="specialPlaylistInfo !== undefined" class="special-playlist">
+    <div
+      v-if="show && specialPlaylistInfo !== undefined"
+      class="special-playlist"
+    >
       <div
         class="title"
         :class="specialPlaylistInfo.gradient"
@@ -160,7 +163,32 @@
       </div>
     </div>
 
+    <div v-if="!show" class="skeleton" aria-hidden="true">
+      <div v-if="!isLikeSongsPage" class="skeleton-header">
+        <div class="skeleton-cover"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton-line title"></div>
+          <div class="skeleton-line meta"></div>
+          <div class="skeleton-line meta short"></div>
+          <div class="skeleton-line button"></div>
+        </div>
+      </div>
+      <div
+        v-for="n in 8"
+        :key="n"
+        class="skeleton-track"
+        :style="{ opacity: 1 - (n - 1) * 0.1 }"
+      >
+        <div class="skeleton-thumb"></div>
+        <div class="skeleton-lines">
+          <div class="skeleton-line title"></div>
+          <div class="skeleton-line meta short"></div>
+        </div>
+      </div>
+    </div>
+
     <TrackList
+      v-else
       :id="playlist.id"
       :tracks="filteredTracks"
       type="playlist"
@@ -330,6 +358,19 @@ const specialPlaylist = {
   },
 };
 
+// 离开歌单页时把已加载的曲目留在内存里，下次进来先直接铺满页面，
+// 网络请求照常发出，只在歌单真的变了时才替换列表。
+const playlistCache = new Map();
+const PLAYLIST_CACHE_SIZE = 3;
+
+function cachePlaylist(key, entry) {
+  playlistCache.delete(key);
+  playlistCache.set(key, entry);
+  while (playlistCache.size > PLAYLIST_CACHE_SIZE) {
+    playlistCache.delete(playlistCache.keys().next().value);
+  }
+}
+
 export default {
   name: 'Playlist',
   components: {
@@ -402,9 +443,20 @@ export default {
     } else {
       this.loadData(this.$route.params.id);
     }
-    setTimeout(() => {
+    this.nprogressTimeout = setTimeout(() => {
       if (!this.show) NProgress.start();
     }, 1000);
+  },
+  beforeUnmount() {
+    clearTimeout(this.nprogressTimeout);
+    if (this.show && this.tracks.length) {
+      cachePlaylist(String(this.id), {
+        playlist: this.playlist,
+        tracks: this.tracks,
+        lastLoadedTrackIndex: this.lastLoadedTrackIndex,
+        hasMore: this.hasMore,
+      });
+    }
   },
   methods: {
     resizeImage,
@@ -441,22 +493,48 @@ export default {
         });
       });
     },
+    hasSameTrackIds(a = [], b = []) {
+      if (a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (a[i].id !== b[i].id) return false;
+      }
+      return true;
+    },
     loadData(id, next = undefined) {
       this.id = id;
+      const cached = playlistCache.get(String(id));
+      if (cached !== undefined) {
+        this.playlist = cached.playlist;
+        this.tracks = cached.tracks;
+        this.lastLoadedTrackIndex = cached.lastLoadedTrackIndex;
+        this.hasMore = cached.hasMore;
+        this.show = true;
+      }
       getPlaylistDetail(this.id, true)
         .then(data => {
+          // 歌单没变就保留缓存里的完整列表，避免退回到第一批再重新加载
+          const keepCachedTracks =
+            cached !== undefined &&
+            this.hasSameTrackIds(
+              cached.playlist.trackIds,
+              data.playlist.trackIds
+            );
           this.playlist = data.playlist;
-          this.tracks = data.playlist.tracks;
+          if (!keepCachedTracks) {
+            this.tracks = data.playlist.tracks;
+            this.lastLoadedTrackIndex = data.playlist.tracks.length - 1;
+          }
           NProgress.done();
           if (next !== undefined) next();
           this.show = true;
-          this.lastLoadedTrackIndex = data.playlist.tracks.length - 1;
           return data;
         })
         .then(() => {
           if (this.playlist.trackCount > this.tracks.length) {
             this.loadingMore = true;
             this.loadMore();
+          } else {
+            this.hasMore = false;
           }
         });
     },
@@ -600,6 +678,99 @@ export default {
 .playlist {
   margin-top: 24px;
 }
+
+// 加载占位：撑住真实内容的版式，避免数据到达前的整页空白
+.skeleton {
+  animation: skeleton-breathe 1.6s var(--ease-out) infinite;
+
+  .skeleton-line,
+  .skeleton-cover,
+  .skeleton-thumb {
+    background: var(--housing-elev);
+    border-radius: 8px;
+  }
+
+  .skeleton-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .skeleton-line {
+    height: 12px;
+    &.title {
+      height: 16px;
+      width: 42%;
+      background: var(--housing-divider);
+    }
+    &.meta {
+      width: 28%;
+      margin-top: 10px;
+    }
+    &.short {
+      width: 18%;
+    }
+    &.button {
+      height: 36px;
+      width: 128px;
+      margin-top: 22px;
+      border-radius: 10px;
+    }
+  }
+
+  .skeleton-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    margin-bottom: 36px;
+
+    .skeleton-cover {
+      height: 192px;
+      width: 192px;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+    .skeleton-line.title {
+      width: 34%;
+      height: 26px;
+    }
+  }
+
+  .skeleton-track {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+
+    .skeleton-thumb {
+      height: 46px;
+      width: 46px;
+      margin-right: 20px;
+      flex-shrink: 0;
+    }
+    .skeleton-line.title {
+      width: 30%;
+    }
+  }
+}
+
+@keyframes skeleton-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 .playlist-info {
   display: flex;
   align-items: flex-start;
