@@ -19,6 +19,7 @@ import {
 import path from 'path';
 import { startNeteaseMusicApi } from './electron/services';
 import { initIpcMain } from './electron/ipcMain.js';
+import { initMiniPlayer, showMainWindow } from './electron/miniPlayer';
 import { createMenu } from './electron/menu';
 import { createTray } from '@/electron/tray';
 import { createTouchBar } from './electron/touchBar';
@@ -103,6 +104,7 @@ class Background {
     });
     this.neteaseMusicAPI = null;
     this.expressApp = null;
+    this.miniPlayer = null;
     this.willQuitApp = !isMac;
 
     this.init();
@@ -211,6 +213,10 @@ class Background {
         nodeIntegration: false,
         contextIsolation: true,
         preload: path.join(__dirname, 'preload.js'),
+        // The renderer keeps running (and pumping mini-player state) while
+        // hidden behind the mini widget — Chromium would otherwise throttle
+        // its timers once the window is not visible.
+        backgroundThrottling: false,
       },
       backgroundColor: '#222',
     };
@@ -409,6 +415,9 @@ class Background {
       // init ipcMain
       initIpcMain(this.window, this.store, this.trayEventEmitter);
 
+      // init mini player ("The Deck")
+      this.miniPlayer = initMiniPlayer(() => this.window, this.store);
+
       // set proxy
       const proxyRules = this.store.get('proxy');
       if (proxyRules) {
@@ -464,7 +473,7 @@ class Background {
       if (this.window === null) {
         this.createWindow();
       } else {
-        this.window.show();
+        showMainWindow(this.window);
       }
     });
 
@@ -476,6 +485,9 @@ class Background {
 
     app.on('before-quit', () => {
       this.willQuitApp = true;
+      // Tear the widget down without routing through its exit-mini handler,
+      // so shutdown is never blocked by the close interceptor.
+      if (this.miniPlayer) this.miniPlayer.destroy();
     });
 
     app.on('quit', () => {
@@ -490,7 +502,7 @@ class Background {
     if (!isMac) {
       app.on('second-instance', (e, cl, wd) => {
         if (this.window) {
-          this.window.show();
+          showMainWindow(this.window);
           if (this.window.isMinimized()) {
             this.window.restore();
           }

@@ -15,6 +15,7 @@ UI work is governed by these root files (read before any visual change):
 - [`PRODUCT.md`](PRODUCT.md) — strategic: register=`product`, users, brand personality, anti-references, design principles.
 - [`DESIGN.md`](DESIGN.md) — visual system: **currently SEEDED** (placeholder tokens). Re-run `/impeccable document` once real tokens land in code to capture them.
 - [`.impeccable/shape-brief.md`](.impeccable/shape-brief.md) — **approved app-shell redesign brief** (Studio Cassette). Mid-fi spec, ASCII wireframes, token plan, interactions. **Ready for `/impeccable craft` implementation.**
+- [`.impeccable/mini-player-brief.md`](.impeccable/mini-player-brief.md) — **approved mini-player ("The Deck") design + implementation handoff**. Self-contained: full visual spec, IPC protocol, file-by-file plan, verification checklist. **Implemented 2026-08-05** (`mini.html`, `src/mini/`, `src/electron/miniPlayer.js`) — still the reference spec; read it fully before touching mini-player code.
 
 **Creative North Star**: *"The Studio Cassette"* — a piece of dedicated audio gear on a developer's desk. Muted neutral housing with a single saturated **Tape Orange-Red** block worn by the currently-active region (the bottom 88px tape compartment). Two-voice type (sans speaks, mono measures). No pure `#000` / `#fff`. Motion is response, not performance. Dark-first.
 

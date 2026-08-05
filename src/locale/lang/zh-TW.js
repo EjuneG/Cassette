@@ -103,6 +103,7 @@ export default {
     mute: '靜音',
     nextUp: '播放清單',
     lyrics: '歌詞',
+    miniMode: '迷你模式',
     idlePrompt: '選一首歌',
     translationLyric: '歌詞(譯)',
     PronunciationLyric: '歌詞(音)',

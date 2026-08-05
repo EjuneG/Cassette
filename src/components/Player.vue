@@ -179,6 +179,14 @@
           </div>
         </div>
         <button
+          v-if="isElectron"
+          class="ctl ctl-aux"
+          :title="$t('player.miniMode')"
+          @click="enterMiniMode"
+        >
+          <svg-icon icon-class="fullscreen-exit" />
+        </button>
+        <button
           class="ctl ctl-aux ctl-lyrics"
           :title="$t('player.lyrics')"
           @click="toggleLyrics"
@@ -211,6 +219,9 @@ export default {
     },
     hasTrack() {
       return !!(this.currentTrack && this.currentTrack.id);
+    },
+    isElectron() {
+      return process.env.IS_ELECTRON === true;
     },
     volume: {
       get() {
@@ -246,6 +257,9 @@ export default {
     },
     playNextTrack() {
       this.player.playNextTrack();
+    },
+    enterMiniMode() {
+      window.electronAPI?.send('mini:toggle');
     },
     goToNextTracksPage() {
       this.$route.name === 'next'

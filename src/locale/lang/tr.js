@@ -101,6 +101,7 @@ export default {
     mute: 'Sesi kapat',
     nextUp: 'Sıradaki',
     lyrics: 'Şarkı Sözleri',
+    miniMode: 'Mini mod',
     idlePrompt: 'Bir parça seç',
     translationLyric: 'şarkı sözleri (çeviri)',
     PronunciationLyric: 'şarkı sözleri (çeviri)',

@@ -1,0 +1,18 @@
+@import '@/assets/css/tokens';
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  /* The window is frameless and transparent: nothing here should be able to
+     select, scroll or rubber-band. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#mini {
+  font-family: var(--font-sans);
+  color: var(--ink-strong);
+}

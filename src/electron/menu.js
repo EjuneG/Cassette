@@ -1,5 +1,6 @@
 import defaultShortcuts from '@/utils/shortcuts';
 import { app, Menu, shell } from 'electron';
+import { showMainWindow } from '@/electron/miniPlayer';
 // import { autoUpdater } from "electron-updater"
 // const version = app.getVersion();
 
@@ -158,7 +159,7 @@ export function createMenu(win, store) {
                   if (current.checked === false) {
                     win.hide();
                   } else {
-                    win.show();
+                    showMainWindow(win);
                   }
                 },
               },

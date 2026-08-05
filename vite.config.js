@@ -27,6 +27,15 @@ export default defineConfig({
   },
   build: {
     cssMinify: false,
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        // Mini player ("The Deck") — a separate tiny entry, never the main
+        // SPA at another route: two SPA instances would mean two Player.js
+        // instances fighting over the same localStorage keys.
+        mini: path.resolve(__dirname, 'mini.html'),
+      },
+    },
   },
   server: {
     port: process.env.DEV_SERVER_PORT || 20201,

@@ -106,6 +106,7 @@ export default {
     mute: 'Mute',
     nextUp: 'Next Up',
     lyrics: 'Lyrics',
+    miniMode: 'Mini mode',
     idlePrompt: 'Pick a track',
     translationLyric: 'lyric (trans)',
     PronunciationLyric: 'lyric (pronounce)',

@@ -136,6 +136,7 @@ export default class {
   set volume(volume) {
     this._volume = volume;
     this._howler?.volume(volume);
+    this._sendMiniState();
   }
   get list() {
     return this.shuffle ? this._shuffledList : this._list;
@@ -225,7 +226,42 @@ export default class {
       if (isCreateMpris) {
         electronAPI?.send('playerCurrentTrackTime', progress);
       }
+      this._sendMiniState();
     }, 1000);
+  }
+  /**
+   * Snapshot for the mini player ("The Deck"). Deliberately NOT gated on
+   * isCreateMpris/isCreateTray — those gates are why the existing state feed
+   * is Linux-only, and the widget ships on Windows too.
+   * See .impeccable/mini-player-brief.md Part II §1.
+   */
+  _sendMiniState() {
+    if (process.env.IS_ELECTRON !== true) return;
+    const track = this._currentTrack;
+    const hasTrack = !!(track && track.id && track.name);
+    const artists = hasTrack ? track.ar ?? track.artists ?? [] : [];
+
+    electronAPI?.send('mini:player-state', {
+      playing: this._playing,
+      enabled: this._enabled,
+      progress: this._progress,
+      duration: hasTrack ? this.currentTrackDuration : 0,
+      isLiked: hasTrack ? store.state.liked.songs.includes(track.id) : false,
+      repeatMode: this._repeatMode,
+      shuffle: this._shuffle,
+      volume: this._volume,
+      track: hasTrack
+        ? {
+            id: track.id,
+            name: track.name,
+            artists: artists
+              .map(a => a.name)
+              .filter(Boolean)
+              .join(' / '),
+            album: track.al?.name ?? track.album?.name ?? '',
+          }
+        : null,
+    });
   }
   _getNextTrack() {
     const next = this._reversed ? this.current - 1 : this.current + 1;
@@ -613,6 +649,9 @@ export default class {
     }
   }
   _updateMediaSessionMetaData(track) {
+    // Ahead of the mediaSession guard on purpose: the mini player needs the
+    // new track label even where mediaSession is unavailable.
+    this._sendMiniState();
     if ('mediaSession' in navigator === false) {
       return;
     }
@@ -879,6 +918,7 @@ export default class {
       likedCurrentTrack: liked,
     });
     setTrayLikeState(liked);
+    this._sendMiniState();
   }
 
   switchRepeatMode() {
@@ -892,12 +932,14 @@ export default class {
     if (isCreateMpris) {
       electronAPI?.send('switchRepeatMode', this.repeatMode);
     }
+    this._sendMiniState();
   }
   switchShuffle() {
     this.shuffle = !this.shuffle;
     if (isCreateMpris) {
       electronAPI?.send('switchShuffle', this.shuffle);
     }
+    this._sendMiniState();
   }
   switchReversed() {
     this.reversed = !this.reversed;

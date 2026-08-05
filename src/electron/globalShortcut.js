@@ -1,5 +1,6 @@
 import defaultShortcuts from '@/utils/shortcuts';
 import { globalShortcut } from 'electron';
+import { showMainWindow } from '@/electron/miniPlayer';
 import clc from 'cli-color';
 const log = text => {
   console.log(`${clc.blueBright('[globalShortcut.js]')} ${text}`);
@@ -51,7 +52,9 @@ export function registerGlobalShortcut(win, store) {
   globalShortcut.register(
     shortcuts.find(s => s.id === 'minimize').globalShortcut,
     () => {
-      win.isVisible() ? win.hide() : win.show();
+      // Not win.show(): the main window is also hidden while the Deck is
+      // up, and un-hiding it there would leave both on screen.
+      win.isVisible() ? win.hide() : showMainWindow(win);
     }
   );
 }

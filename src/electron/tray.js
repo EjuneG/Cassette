@@ -1,6 +1,7 @@
 import path from 'path';
 import { app, nativeImage, Tray, Menu, nativeTheme } from 'electron';
 import { isLinux } from '@/utils/platform';
+import { showMainWindow } from '@/electron/miniPlayer';
 
 const __static = path.join(__dirname, '../public');
 
@@ -123,7 +124,7 @@ class YPMTrayLinuxImpl {
       {
         label: '显示主面板',
         click: () => {
-          this.win.show();
+          showMainWindow(this.win);
         },
       },
       {
@@ -134,7 +135,7 @@ class YPMTrayLinuxImpl {
 
   handleEvents() {
     this.tray.on('click', () => {
-      this.win.show();
+      showMainWindow(this.win);
     });
 
     this.emitter.on('updateTooltip', title => this.tray.setToolTip(title));
@@ -193,7 +194,7 @@ class YPMTrayWindowsImpl {
 
   handleEvents() {
     this.tray.on('click', () => {
-      this.win.show();
+      showMainWindow(this.win);
     });
 
     this.tray.on('right-click', () => {
