@@ -106,6 +106,7 @@
         :track-prop="track"
         :track-no="index + 1"
         :highlight-playing-track="highlightPlayingTrack"
+        :is-playing="isTrackPlaying(track)"
         :selected="selectedSet.has(index)"
         :type="type"
         :album-object="albumObject"
@@ -231,6 +232,11 @@ export default {
   },
   computed: {
     ...mapState(['liked', 'player']),
+    // 整个列表只在这里订阅 currentTrack。以前是每个 TrackListItem 自己去问
+    // store，换一首歌就让上千个子组件全部失效重渲染，而真正变的只有两行。
+    playingTrackId() {
+      return this.player.currentTrack?.id ?? 0;
+    },
     visibleTracks() {
       return this.renderedCount >= this.tracks.length
         ? this.tracks
@@ -299,6 +305,11 @@ export default {
     ...mapMutations(['updateModal']),
     ...mapActions(['nextTrack', 'showToast', 'likeATrack']),
     resizeImage,
+    isTrackPlaying(track) {
+      // cloudDisk 的条目把真实歌曲藏在 simpleSong 里
+      const id = this.type === 'cloudDisk' ? track.simpleSong?.id : track.id;
+      return id !== undefined && id === this.playingTrackId;
+    },
     // --- 渐进挂载 ---
     scheduleProgressiveRender() {
       if (this.rafId !== null) return;

@@ -104,6 +104,11 @@ export default {
       type: Boolean,
       default: true,
     },
+    // 由 TrackList 统一算好传下来，避免每一行都去订阅 player.currentTrack
+    isPlaying: {
+      type: Boolean,
+      default: false,
+    },
     selected: {
       type: Boolean,
       default: false,
@@ -185,9 +190,6 @@ export default {
     },
     isLiked() {
       return this.likedSongIdSet.has(this.track?.id);
-    },
-    isPlaying() {
-      return this.$store.state.player.currentTrack.id === this.track?.id;
     },
     trackClass() {
       let trackClass = [this.type];
