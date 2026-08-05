@@ -295,11 +295,18 @@ export default {
           QRCode.toString(
             `https://music.163.com/login?codekey=${this.qrCodeKey}`,
             {
-              width: 192,
-              margin: 0,
+              width: 208,
+              // QR spec requires a 4-module quiet zone. Without it (and with a
+              // transparent light color letting the dark housing bleed through)
+              // the NetEase app's scanner cannot lock onto the finder patterns.
+              margin: 4,
               color: {
-                dark: '#335eea',
-                light: '#00000000',
+                // Printed as a physical label: dark ink on off-white stock.
+                // Never invert this (light modules on dark) — scanners reject
+                // inverted codes, and the old #335eea-on-housing combo scored
+                // 2.86:1, below the 3:1 the spec demands.
+                dark: '#1a1613',
+                light: '#f5f0e8',
               },
               type: 'svg',
             }
@@ -574,9 +581,16 @@ button.loading {
 
 .qr-code-container {
   background-color: var(--color-primary-bg);
-  padding: 24px 24px 21px 24px;
+  padding: 16px;
   border-radius: 1.25rem;
   margin-bottom: 12px;
+}
+.qr-code-container img {
+  /* block kills the inline baseline gap the old asymmetric padding compensated
+     for. The SVG carries its own off-white stock + quiet zone, so it reads as
+     a label stuck onto the orange panel. */
+  display: block;
+  border-radius: 0.5rem;
 }
 .qr-code-info {
   color: var(--color-text);
