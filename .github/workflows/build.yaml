@@ -34,7 +34,15 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Build renderer (Vite)
+        # Must be the Electron renderer build, not the web one: without
+        # IS_ELECTRON the bundle gets the history router and every
+        # `process.env.IS_ELECTRON` guard goes false — no titlebar, no tray
+        # sync, no UNM, no mini player. Set via env rather than the
+        # `build:electron` script, whose `IS_ELECTRON=true` prefix is not
+        # valid on the Windows runner's shell.
         run: yarn build
+        env:
+          IS_ELECTRON: 'true'
 
       - name: Build Electron main process
         run: yarn electron:build-main
