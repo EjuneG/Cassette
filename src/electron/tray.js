@@ -1,9 +1,35 @@
 import path from 'path';
 import { app, nativeImage, Tray, Menu, nativeTheme } from 'electron';
-import { isLinux } from '@/utils/platform';
+import { isLinux, isWindows, isDevelopment } from '@/utils/platform';
 import { showMainWindow } from '@/electron/miniPlayer';
 
-const __static = path.join(__dirname, '../public');
+// In production the asar only ships dist/ (Vite copies public/* into it) —
+// there is no ../public, and createFromPath would silently return an empty
+// image, leaving the tray invisible. Same branch as background.js uses.
+const __static = path.join(__dirname, isDevelopment ? '../public' : '../dist');
+
+function getTrayIcon(store) {
+  if (isWindows) {
+    // Windows convention is a full-color tray icon; the multi-size .ico lets
+    // the OS pick the right DPI variant. This also sidesteps nativeTheme,
+    // which follows the "app mode" setting while the taskbar follows the
+    // separate "Windows mode" — guessing there paints black-on-black.
+    return path.join(__static, 'img/icons/tray.ico');
+  }
+  let trayIconSetting = store.get('settings.trayIconTheme') || 'auto';
+  let iconTheme;
+  if (trayIconSetting === 'auto') {
+    iconTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
+  } else {
+    iconTheme = trayIconSetting;
+  }
+  return nativeImage
+    .createFromPath(path.join(__static, `img/icons/menu-${iconTheme}@88.png`))
+    .resize({
+      height: 20,
+      width: 20,
+    });
+}
 
 function createMenuTemplate(win) {
   return [
@@ -155,22 +181,7 @@ class YPMTrayLinuxImpl {
   }
 
   updateIcon() {
-    let trayIconSetting = this.store.get('settings.trayIconTheme') || 'auto';
-    let iconTheme;
-    if (trayIconSetting === 'auto') {
-      iconTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
-    } else {
-      iconTheme = trayIconSetting;
-    }
-
-    let icon = nativeImage
-      .createFromPath(path.join(__static, `img/icons/menu-${iconTheme}@88.png`))
-      .resize({
-        height: 20,
-        width: 20,
-      });
-
-    this.tray.setImage(icon);
+    this.tray.setImage(getTrayIcon(this.store));
   }
 }
 
@@ -225,42 +236,12 @@ class YPMTrayWindowsImpl {
   }
 
   updateIcon() {
-    let trayIconSetting = this.store.get('settings.trayIconTheme') || 'auto';
-    let iconTheme;
-    if (trayIconSetting === 'auto') {
-      iconTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
-    } else {
-      iconTheme = trayIconSetting;
-    }
-
-    let icon = nativeImage
-      .createFromPath(path.join(__static, `img/icons/menu-${iconTheme}@88.png`))
-      .resize({
-        height: 20,
-        width: 20,
-      });
-
-    this.tray.setImage(icon);
+    this.tray.setImage(getTrayIcon(this.store));
   }
 }
 
 export function createTray(win, eventEmitter, store) {
-  let trayIconSetting = store.get('settings.trayIconTheme') || 'auto';
-  let iconTheme;
-  if (trayIconSetting === 'auto') {
-    iconTheme = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
-  } else {
-    iconTheme = trayIconSetting;
-  }
-
-  let icon = nativeImage
-    .createFromPath(path.join(__static, `img/icons/menu-${iconTheme}@88.png`))
-    .resize({
-      height: 20,
-      width: 20,
-    });
-
-  let tray = new Tray(icon);
+  let tray = new Tray(getTrayIcon(store));
   tray.setToolTip('Cassette');
 
   return isLinux

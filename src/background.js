@@ -291,7 +291,9 @@ class Background {
       // No listener would make the EventEmitter throw and take the app down
       // on a flaky network.
       log(
-        `autoUpdater error: ${err == null ? 'unknown' : err.stack || String(err)}`
+        `autoUpdater error: ${
+          err == null ? 'unknown' : err.stack || String(err)
+        }`
       );
     });
 
@@ -337,7 +339,13 @@ class Background {
             // The tray-style close interceptors would swallow the quit that
             // quitAndInstall() issues; forceQuit lets it through.
             this.forceQuit = true;
-            autoUpdater.quitAndInstall();
+            // isSilent=true: the NSIS installer is now the assisted (wizard)
+            // form, so without /S an update would re-open the whole wizard.
+            // Silent mode reuses InstallLocation from the registry, keeping
+            // whatever folder the user picked. AppImage ignores this flag.
+            // isForceRunAfter=true: relaunch after installing (what the
+            // default already did via autoRunAppAfterInstall).
+            autoUpdater.quitAndInstall(true, true);
           }
         });
     });

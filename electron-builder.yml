@@ -34,8 +34,17 @@ win:
   icon: build/icons/icon.ico
 
 nsis:
-  oneClick: true
-  perMachine: true
+  # oneClick installers give no UI at all and always land in Program Files.
+  # The wizard form is what lets people pick a drive/folder.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  # Unset perMachine => the wizard opens with an "all users / just me" page.
+  # "Just me" needs no UAC (so no admin prompt to install onto D:), and the
+  # per-machine branch stays available via allowElevation. Existing
+  # per-machine installs are detected in initMultiUser and keep their mode.
+  allowElevation: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
   deleteAppDataOnUninstall: true
   # Default is "Cassette Setup 1.0.0.exe" — the spaces do not match the
   # URL-safe filename electron-updater writes into latest.yml, so auto-update
@@ -57,4 +66,6 @@ mac:
         - x64
         - arm64
   category: public.app-category.music
-  icon: build/icons/icon.icns
+  # PNG source — electron-builder generates the .icns itself on the mac
+  # runner (no icns tooling exists locally to keep a checked-in one fresh).
+  icon: build/icons/icon.png

@@ -1,9 +1,12 @@
 import { TouchBar, nativeImage, ipcMain } from 'electron';
 import path from 'path';
+import { isDevelopment } from '@/utils/platform';
 
 const { TouchBarButton, TouchBarSpacer } = TouchBar;
 
-const __static = path.join(__dirname, '../public');
+// Same as tray.js: production asar ships dist/ (public/* copied in), never
+// ../public — resolving there yields empty images.
+const __static = path.join(__dirname, isDevelopment ? '../public' : '../dist');
 
 export function createTouchBar(window) {
   const renderer = window.webContents;

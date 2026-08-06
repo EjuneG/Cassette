@@ -40,7 +40,9 @@
           </select>
         </div>
       </div>
-      <div v-if="isElectron" class="item">
+      <!-- Windows always uses the full-color tray icon, so the mono
+           light/dark choice only exists on Linux -->
+      <div v-if="isElectron && isLinux" class="item">
         <div class="left">
           <div class="title"> {{ $t('settings.trayIcon.text') }} </div>
         </div>
