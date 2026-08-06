@@ -100,7 +100,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #eaeffd;
+  background: var(--color-primary-bg);
   border-radius: 8px;
   height: 128px;
   width: 300px;
@@ -124,7 +124,9 @@ export default {
     // justify-content: space-around;
     align-items: center;
 
-    color: #335eea;
+    // bright, not --color-primary: the plain orange lands at 4.21:1 on
+    // --color-primary-bg, which is under AA for the body copy in here.
+    color: var(--tape-orange-bright);
   }
 
   .title-info {

@@ -1463,8 +1463,8 @@ h3 {
       }
       &:hover {
         opacity: 1;
-        background: #eaeffd;
-        color: #335eea;
+        background: var(--color-primary-bg);
+        color: var(--tape-orange-bright);
       }
       &:active {
         opacity: 1;
