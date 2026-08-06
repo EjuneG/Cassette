@@ -1,5 +1,9 @@
 <template>
-  <div class="deck" :class="{ idle: !canControl }" @wheel.prevent="onWheel">
+  <div
+    class="deck"
+    :class="{ idle: !canControl, 'lyrics-open': lyricsOn, anim: panelAnim }"
+    @wheel.prevent="onWheel"
+  >
     <!-- ── LABEL STRIP ─────────────────────────────────────────────── -->
     <div class="label-strip" @dblclick="expand">
       <template v-if="canControl">
@@ -57,6 +61,30 @@
         <span class="elapsed">{{ elapsedStamp }}</span>
         <span class="sep"> / </span>
         <span class="total">{{ totalStamp }}</span>
+      </div>
+
+      <button
+        class="lrc-stamp"
+        :class="{ on: lyricsOn }"
+        title="Lyrics"
+        @pointerdown.stop
+        @click.stop="send('toggleLyrics')"
+      >
+        LRC
+      </button>
+    </div>
+
+    <!-- ── LYRIC STRIP (flips open between tape window and keys) ────── -->
+    <div ref="lyricSlot" class="lyric-slot">
+      <div class="lyric-panel">
+        <transition name="lyric-swap" mode="out-in">
+          <span
+            :key="lyricDisplay.key"
+            class="lyric-line"
+            :class="{ stamp: lyricDisplay.stamp }"
+            >{{ lyricDisplay.text }}</span
+          >
+        </transition>
       </div>
     </div>
 
@@ -161,6 +189,10 @@ const R_FULL = 14;
 const R_EMPTY = 6;
 const R_IDLE = 10;
 
+// Deck height with the lyric strip open — must match MINI_HEIGHT_LYRICS in
+// src/electron/miniPlayer.js and the .deck.lyrics-open height below.
+const DECK_OPEN_HEIGHT = 178;
+
 function pad(n) {
   return n < 10 ? `0${n}` : `${n}`;
 }
@@ -190,6 +222,20 @@ export default {
       titleOverflow: 0,
       lastWheelAt: 0,
       stateListener: null,
+      lyricsListener: null,
+      lyricsModeListener: null,
+      // Lyric strip. `lyrics` is the full parsed track lyric; the current
+      // line is derived locally from an interpolated clock, because the
+      // 1 Hz snapshot alone would switch lines up to a second late.
+      lyrics: [],
+      lyricsTrackId: null,
+      lyricsOn: false,
+      panelAnim: false,
+      lyricsModeSeq: 0,
+      clockAt: 0,
+      nowMs: 0,
+      ticker: null,
+      collapseTimer: null,
     };
   },
   computed: {
@@ -243,10 +289,49 @@ export default {
     titleStyle() {
       return { '--marquee-shift': `${-this.titleOverflow}px` };
     },
+    tickerActive() {
+      return this.lyricsOn && this.state.playing && this.canControl;
+    },
+    lyricTime() {
+      if (this.seeking) return this.seekRatio * this.duration;
+      if (!this.state.playing) return this.state.progress;
+      return (
+        this.state.progress + Math.max(0, (this.nowMs - this.clockAt) / 1000)
+      );
+    },
+    lyricDisplay() {
+      if (!this.canControl) return { key: 'idle', text: '· · ·', stamp: true };
+      const trackId = this.state.track.id;
+      if (this.lyricsTrackId !== trackId) {
+        return { key: `wait-${trackId}`, text: '· · ·', stamp: true };
+      }
+      if (this.lyrics.length === 0) {
+        return { key: `none-${trackId}`, text: 'NO LYRICS', stamp: true };
+      }
+      const index = this.lyricIndexAt(this.lyricTime);
+      if (index < 0) {
+        return { key: `pre-${trackId}`, text: '· · ·', stamp: true };
+      }
+      const content = (this.lyrics[index].content || '').trim();
+      if (!content) return { key: `gap-${index}`, text: '· · ·', stamp: true };
+      return { key: `${trackId}-${index}`, text: content, stamp: false };
+    },
   },
   watch: {
     trackTitle() {
       this.$nextTick(this.measureTitle);
+    },
+    tickerActive: {
+      immediate: true,
+      handler(active) {
+        clearInterval(this.ticker);
+        this.ticker = null;
+        if (active) {
+          this.ticker = setInterval(() => {
+            this.nowMs = performance.now();
+          }, 250);
+        }
+      },
     },
   },
   created() {
@@ -255,6 +340,16 @@ export default {
     this.stateListener = api.on('mini:state', state => {
       if (!state) return;
       Object.assign(this.state, state);
+      this.clockAt = performance.now();
+      this.nowMs = this.clockAt;
+    });
+    this.lyricsListener = api.on('mini:lyrics', payload => {
+      if (!payload) return;
+      this.lyricsTrackId = payload.id;
+      this.lyrics = Array.isArray(payload.lines) ? payload.lines : [];
+    });
+    this.lyricsModeListener = api.on('mini:lyrics-mode', payload => {
+      if (payload) this.onLyricsMode(payload);
     });
   },
   mounted() {
@@ -265,8 +360,17 @@ export default {
   beforeUnmount() {
     window.removeEventListener('keydown', this.onKeydown);
     window.removeEventListener('resize', this.measureTitle);
+    clearInterval(this.ticker);
+    clearTimeout(this.collapseTimer);
+    const api = window.electronAPI;
     if (this.stateListener) {
-      window.electronAPI?.removeListener('mini:state', this.stateListener);
+      api?.removeListener('mini:state', this.stateListener);
+    }
+    if (this.lyricsListener) {
+      api?.removeListener('mini:lyrics', this.lyricsListener);
+    }
+    if (this.lyricsModeListener) {
+      api?.removeListener('mini:lyrics-mode', this.lyricsModeListener);
     }
   },
   methods: {
@@ -281,6 +385,75 @@ export default {
       this.titleOverflow = el
         ? Math.max(0, el.scrollWidth - el.clientWidth)
         : 0;
+    },
+
+    /* ---- lyric strip ---- */
+    lyricIndexAt(time) {
+      // Last line whose timestamp has passed; -1 before the first line.
+      const lines = this.lyrics;
+      let low = 0;
+      let high = lines.length - 1;
+      let found = -1;
+      while (low <= high) {
+        const mid = (low + high) >> 1;
+        if (lines[mid].time <= time) {
+          found = mid;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return found;
+    },
+    onLyricsMode({ on, animate }) {
+      const seq = ++this.lyricsModeSeq;
+      clearTimeout(this.collapseTimer);
+      this.collapseTimer = null;
+      if (on === this.lyricsOn) return;
+      if (!animate) {
+        this.panelAnim = false;
+        this.lyricsOn = on;
+        return;
+      }
+      if (on) {
+        // The main process has just grown the window, but on X11 the new
+        // bounds land a frame or two later. Starting the expansion early
+        // means it plays clipped inside the old viewport and pops when the
+        // resize hits — wait until the pixels actually exist.
+        this.awaitViewport(DECK_OPEN_HEIGHT, () => {
+          if (seq !== this.lyricsModeSeq) return;
+          this.panelAnim = true;
+          this.lyricsOn = true;
+        });
+        return;
+      }
+      this.panelAnim = true;
+      this.lyricsOn = false;
+      // Closing: the window must not shrink until the collapse animation has
+      // played out (0ms under reduced motion — read, don't hardcode).
+      this.$nextTick(() => {
+        this.collapseTimer = setTimeout(() => {
+          this.send('lyricsCollapsed');
+        }, this.slotTransitionMs() + 40);
+      });
+    },
+    awaitViewport(minHeight, callback) {
+      const deadline = performance.now() + 250;
+      const check = () => {
+        if (window.innerHeight >= minHeight || performance.now() > deadline) {
+          callback();
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      check();
+    },
+    slotTransitionMs() {
+      const el = this.$refs.lyricSlot;
+      if (!el) return 0;
+      const raw = getComputedStyle(el).transitionDuration || '0s';
+      const value = parseFloat(raw) || 0;
+      return raw.includes('ms') ? value : value * 1000;
     },
 
     /* ---- seek ("winding the tape") ---- */
@@ -306,6 +479,8 @@ export default {
       // Optimistic: the next 1 Hz snapshot may still carry the pre-seek
       // position, so show the target now and let the snapshot after it win.
       this.state.progress = target;
+      this.clockAt = performance.now();
+      this.nowMs = this.clockAt;
       this.send('seek', target);
     },
     onSeekCancel() {
@@ -355,17 +530,40 @@ export default {
    flat mechanical keys. Motion only where the machine actually moves.
    ========================================================================== */
 
+/* Top-anchored with an explicit height (not inset: 0): the window's bounds
+   jump instantly when the lyric strip toggles (it's transparent, so that's
+   invisible), while the deck body animates its height in CSS — the label
+   strip and tape window stay put, the transport bay slides down to reveal
+   the strip. Growing DOWN with the top edge fixed matters on X11: a resize
+   that keeps the top-left corner still repaints cleanly, while a move+resize
+   combo flashes the old frame at the new origin for a frame or two — the
+   spring-loaded bounce this direction replaced. */
 .deck {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 148px;
   box-sizing: border-box;
   display: grid;
-  grid-template-rows: 40px 1fr 40px;
+  grid-template-rows: 40px 1fr auto 40px;
   border: 1px solid var(--housing-hairline);
   border-radius: 10px;
   background: var(--housing-elev);
   overflow: hidden;
   -webkit-app-region: drag;
+
+  /* The door opens under motor power, not spring power: symmetric
+     accelerate-then-settle, unlike the front-loaded --ease-out. */
+  --ease-door: cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.lyrics-open {
+    height: 178px;
+  }
+
+  &.anim {
+    transition: height var(--motion-base) var(--ease-door);
+  }
 }
 
 /* ------ label strip ------ */
@@ -529,6 +727,92 @@ export default {
   .total {
     color: var(--ink-soft);
   }
+}
+
+.lrc-stamp {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  padding: 2px 3px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out);
+
+  &:hover {
+    color: var(--ink-mid);
+  }
+
+  &.on {
+    color: var(--tape-orange);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--tape-orange);
+  }
+}
+
+/* ------ lyric strip ------ */
+/* Slot = the gap that opens in the housing; panel = the display inside it.
+   Slot height (0 → 30px) and deck height (148 → 178px) share one duration
+   and easing, so the label strip and tape window never change size. */
+.lyric-slot {
+  height: 0;
+  overflow: hidden;
+
+  .deck.lyrics-open & {
+    height: 30px;
+  }
+
+  .deck.anim & {
+    transition: height var(--motion-base) var(--ease-door);
+  }
+}
+
+.lyric-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  margin: 0 10px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--housing-hairline);
+  border-radius: 6px;
+  background: var(--housing-base);
+}
+
+.lyric-line {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-strong);
+
+  &.stamp {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--ink-faint);
+  }
+}
+
+.lyric-swap-enter-active,
+.lyric-swap-leave-active {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.lyric-swap-enter-from,
+.lyric-swap-leave-to {
+  opacity: 0;
 }
 
 /* ------ key row ------ */

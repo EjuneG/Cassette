@@ -1,5 +1,5 @@
 import path from 'path';
-import { BrowserWindow, ipcMain, screen } from 'electron';
+import { BrowserWindow, Menu, ipcMain, screen } from 'electron';
 import clc from 'cli-color';
 
 const log = text => {
@@ -8,6 +8,13 @@ const log = text => {
 
 const MINI_WIDTH = 320;
 const MINI_HEIGHT = 148;
+// With the lyric strip flipped open the deck grows by 30px (24px panel +
+// 6px gap). The TOP edge stays put — the transport bay slides down. On X11
+// a resize that keeps the top-left corner fixed repaints cleanly; moving
+// and resizing together flashes the old frame at the new origin (a visible
+// spring-loaded bounce), so y only ever changes when the screen bottom
+// forces a clamp.
+const MINI_HEIGHT_LYRICS = 178;
 const SCREEN_MARGIN = 24;
 
 // mini -> main-process -> renderer(main). We deliberately reuse the command
@@ -59,9 +66,13 @@ export function showMainWindow(win) {
 export function initMiniPlayer(getMainWindow, store) {
   let miniWin = null;
   let lastState = null;
+  let lastLyrics = null;
+  let collapseTimer = null;
   let isQuitting = false;
 
   const isOpen = () => !!miniWin && !miniWin.isDestroyed();
+  const lyricsOn = () => !!store.get('miniPlayer.lyricsOn');
+  const deckHeight = () => (lyricsOn() ? MINI_HEIGHT_LYRICS : MINI_HEIGHT);
 
   const getUrl = () => {
     const devServerUrl = process.env.VITE_DEV_SERVER_URL;
@@ -92,7 +103,7 @@ export function initMiniPlayer(getMainWindow, store) {
     const { workArea } = screen.getPrimaryDisplay();
     return {
       x: workArea.x + workArea.width - MINI_WIDTH - SCREEN_MARGIN,
-      y: workArea.y + workArea.height - MINI_HEIGHT - SCREEN_MARGIN,
+      y: workArea.y + workArea.height - deckHeight() - SCREEN_MARGIN,
     };
   }
 
@@ -119,7 +130,7 @@ export function initMiniPlayer(getMainWindow, store) {
       x,
       y,
       width: MINI_WIDTH,
-      height: MINI_HEIGHT,
+      height: deckHeight(),
       useContentSize: true,
       frame: false,
       transparent: true,
@@ -154,7 +165,27 @@ export function initMiniPlayer(getMainWindow, store) {
     });
 
     win.webContents.on('did-finish-load', () => {
+      // No animation on the initial push: the window was created at the
+      // right height already, the panel just has to be there.
+      win.webContents.send('mini:lyrics-mode', {
+        on: lyricsOn(),
+        animate: false,
+      });
       if (lastState) win.webContents.send('mini:state', lastState);
+      if (lastLyrics) win.webContents.send('mini:lyrics', lastLyrics);
+    });
+
+    win.webContents.on('context-menu', () => {
+      Menu.buildFromTemplate([
+        {
+          label: 'Lyrics',
+          type: 'checkbox',
+          checked: lyricsOn(),
+          click: () => setLyricsMode(!lyricsOn()),
+        },
+        { type: 'separator' },
+        { label: 'Back to Cassette', click: () => exit() },
+      ]).popup({ window: win });
     });
 
     win.on('moved', () => {
@@ -183,6 +214,7 @@ export function initMiniPlayer(getMainWindow, store) {
     }
     if (!isOpen()) return;
     log('exiting mini mode');
+    clearTimeout(collapseTimer);
     persistPosition();
     const closing = miniWin;
     miniWin = null;
@@ -196,6 +228,7 @@ export function initMiniPlayer(getMainWindow, store) {
 
   function destroy() {
     isQuitting = true;
+    clearTimeout(collapseTimer);
     if (!isOpen()) return;
     persistPosition();
     const closing = miniWin;
@@ -203,10 +236,78 @@ export function initMiniPlayer(getMainWindow, store) {
     closing.destroy();
   }
 
+  /**
+   * The window itself can't animate its bounds smoothly (X11 resize is
+   * jank city), but it IS transparent — so bounds always jump in a single
+   * frame while the CSS deck animates inside them:
+   *
+   *   open:  grow the window instantly (new pixels are transparent, nobody
+   *          sees it), then tell the renderer to play the expand animation
+   *          (which itself waits for the new bounds to land).
+   *   close: tell the renderer to play the collapse animation, and only
+   *          shrink the window once it reports back (with a fallback timer
+   *          in case the renderer never answers).
+   *
+   * The top edge never moves — the transport bay slides down to reveal the
+   * strip. See the MINI_HEIGHT_LYRICS comment for why this direction.
+   */
+  function applyBounds(bounds) {
+    // resizable:false blocks programmatic resizes on some platforms.
+    miniWin.setResizable(true);
+    miniWin.setBounds(bounds);
+    miniWin.setResizable(false);
+  }
+
+  function growWindow() {
+    const b = miniWin.getBounds();
+    const { workArea } = screen.getDisplayMatching(b);
+    const maxY = workArea.y + workArea.height - MINI_HEIGHT_LYRICS;
+    applyBounds({
+      x: b.x,
+      y: Math.max(workArea.y, Math.min(b.y, maxY)),
+      width: MINI_WIDTH,
+      height: MINI_HEIGHT_LYRICS,
+    });
+  }
+
+  function shrinkWindow() {
+    if (!isOpen() || lyricsOn()) return;
+    const b = miniWin.getBounds();
+    if (b.height === MINI_HEIGHT) return;
+    applyBounds({
+      x: b.x,
+      y: b.y,
+      width: MINI_WIDTH,
+      height: MINI_HEIGHT,
+    });
+  }
+
+  function setLyricsMode(on) {
+    if (on === lyricsOn()) return;
+    store.set('miniPlayer.lyricsOn', on);
+    if (!isOpen()) return;
+    clearTimeout(collapseTimer);
+    if (on) {
+      growWindow();
+      miniWin.webContents.send('mini:lyrics-mode', { on: true, animate: true });
+    } else {
+      miniWin.webContents.send('mini:lyrics-mode', {
+        on: false,
+        animate: true,
+      });
+      collapseTimer = setTimeout(shrinkWindow, 600);
+    }
+  }
+
   function relay(payload) {
     const { action, value } = payload || {};
     if (!action) return;
     if (action === 'expand') return exit();
+    if (action === 'toggleLyrics') return setLyricsMode(!lyricsOn());
+    if (action === 'lyricsCollapsed') {
+      clearTimeout(collapseTimer);
+      return shrinkWindow();
+    }
 
     const main = getMainWindow();
     if (!main || main.isDestroyed()) return;
@@ -224,6 +325,11 @@ export function initMiniPlayer(getMainWindow, store) {
   ipcMain.on('mini:player-state', (_, state) => {
     lastState = state;
     if (isOpen()) miniWin.webContents.send('mini:state', state);
+  });
+
+  ipcMain.on('mini:lyrics', (_, lyrics) => {
+    lastLyrics = lyrics;
+    if (isOpen()) miniWin.webContents.send('mini:lyrics', lyrics);
   });
 
   ipcMain.on('mini:toggle', () => toggle());

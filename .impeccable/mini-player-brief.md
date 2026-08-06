@@ -381,3 +381,65 @@ No changes needed to: `preload.js` (generic bridge), `electron-builder.yml`
 Buffering stamp (needs a Howler load-state signal Player.js doesn't expose yet),
 repeat/shuffle indicators on the widget, volume slider popover, opacity-on-hover
 "ghost mode", light-theme shell, Windows acrylic checks, global shortcut for toggle.
+
+---
+
+# Addendum 2026-08-06 — Lyric strip ("the VFD display")
+
+**Status**: ✅ approved + implemented. An optional fourth row showing the current
+lyric line, styled like the fluorescent display on a real deck.
+
+## Design
+
+- **Geometry**: toggling lyrics on grows the deck 148 → **178px** (+30px = 24px
+  panel + 6px gap), inserted between the tape window and the key row. The
+  **top edge never moves** — the label strip and tape window stay put and the
+  transport bay slides down, like a drawer opening. (Originally bottom-fixed
+  with the body lifting; changed 2026-08-06 because X11 move+resize combos
+  flash the old frame at the new origin — a visible spring bounce. A resize
+  that keeps the top-left corner fixed repaints cleanly.)
+- **Panel**: same inset plane as the tape window (`--housing-base`, 1px
+  `--housing-hairline`, 6px radius, `margin: 0 10px`). One line, `--font-mono`
+  11px `--ink-strong`, centered, ellipsis on overflow. Mono stamps (10px,
+  0.16em tracking, `--ink-faint`): `NO LYRICS` (track has no lrc), `· · ·`
+  (interlude / before first line / lyrics still loading / idle).
+- **Toggle**: a silkscreen `LRC` stamp in the tape window's bottom-right corner
+  (`--ink-faint`, hover `--ink-mid`, active `--tape-orange`), plus a right-click
+  context menu (Lyrics checkbox / Back to Cassette). Persisted as
+  `miniPlayer.lyricsOn`; window is created at the right height next time.
+- **Motion**: open/close animate deck height and slot height together,
+  `--motion-base` with a component-local `--ease-door:
+  cubic-bezier(0.4, 0, 0.2, 1)` — a symmetric motor-driven settle; the
+  front-loaded `--ease-out` read as spring-ejected here. No bounce. Line
+  changes crossfade (`--motion-fast`, Vue transition out-in). Reduced motion:
+  all collapse to 0ms via the token overrides.
+
+## Engineering
+
+- **Window bounds can't animate smoothly (X11), but the window is transparent**,
+  so bounds always jump in one frame while CSS animates inside them:
+  - *Open*: main process grows bounds instantly (new pixels transparent),
+    persists, then sends `mini:lyrics-mode {on:true, animate:true}` → renderer
+    waits until `window.innerHeight` actually reaches the open height (rAF
+    poll, 250ms deadline) before playing the expand — starting early would
+    animate clipped inside the old viewport and pop when the resize lands.
+  - *Close*: main sends `mini:lyrics-mode {on:false, animate:true}` → renderer
+    collapses, then replies `mini:command {action:'lyricsCollapsed'}` → main
+    shrinks bounds. Fallback shrink timer (600ms) if the reply never comes; the
+    renderer reads its real `transitionDuration` so reduced-motion closes
+    immediately.
+  - Both directions keep `y` (the top edge) fixed; growing only shifts `y` up
+    when the display's workArea bottom forces a clamp. `resizable:false` is
+    toggled around `setBounds` (`applyBounds`) because some platforms block
+    programmatic resizes otherwise.
+- **Data**: `Player.js#_sendMiniLyrics(track)` (called from
+  `_updateMediaSessionMetaData`, ungated like the rest of the mini feed) fetches
+  via the Dexie-cached `getLyric`, parses with `lyricParser`, and sends
+  `mini:lyrics {id, lines: [{time, content}]}`. The id guards against a slow
+  fetch labeling a later track. Main process caches the latest payload and
+  replays it (plus `mini:lyrics-mode {animate:false}`) on `did-finish-load`.
+- **Current line**: the renderer interpolates a local clock
+  (`progress + elapsed-since-snapshot` while playing, 250ms ticker only while
+  the strip is open) and binary-searches the last line with `time <= t` — line
+  switches land within ~100ms instead of the 1 Hz snapshot granularity.
+  Scrubbing the tape window previews the line at the scrub target.

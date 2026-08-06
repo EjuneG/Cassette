@@ -5,6 +5,7 @@ import { getLyric, getMP3, getTrackDetail, scrobble } from '@/api/track';
 import store from '@/store';
 import { isAccountLoggedIn } from '@/utils/auth';
 import { cacheTrackSource, getTrackSource } from '@/utils/db';
+import { lyricParser } from '@/utils/lyrics';
 import { isCreateMpris, isCreateTray } from '@/utils/platform';
 import { Howl, Howler } from 'howler';
 import shuffle from 'lodash/shuffle';
@@ -262,6 +263,28 @@ export default class {
           }
         : null,
     });
+  }
+  /**
+   * Full parsed lyric for the mini player's lyric strip, sent once per track.
+   * getLyric() is Dexie-cached, so repeat sends for the same track are cheap.
+   * The id tags the payload so a slow fetch can't label a later track.
+   */
+  async _sendMiniLyrics(track) {
+    if (process.env.IS_ELECTRON !== true) return;
+    if (!track?.id) return;
+    const id = track.id;
+    let lines = [];
+    try {
+      const data = await getLyric(id);
+      lines = lyricParser(data).lyric.map(l => ({
+        time: l.time,
+        content: l.content,
+      }));
+    } catch {
+      lines = [];
+    }
+    if (this._currentTrack?.id !== id) return;
+    electronAPI?.send('mini:lyrics', { id, lines });
   }
   _getNextTrack() {
     const next = this._reversed ? this.current - 1 : this.current + 1;
@@ -652,6 +675,7 @@ export default class {
     // Ahead of the mediaSession guard on purpose: the mini player needs the
     // new track label even where mediaSession is unavailable.
     this._sendMiniState();
+    this._sendMiniLyrics(track);
     if ('mediaSession' in navigator === false) {
       return;
     }
