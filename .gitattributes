@@ -5,3 +5,7 @@
 *.mp3 binary
 *.icns binary
 *.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
