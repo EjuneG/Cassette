@@ -106,6 +106,7 @@ class Background {
     this.expressApp = null;
     this.miniPlayer = null;
     this.willQuitApp = !isMac;
+    this.forceQuit = false;
 
     this.init();
   }
@@ -285,30 +286,62 @@ class Background {
   checkForUpdates() {
     if (isDevelopment) return;
     log('checkForUpdates');
-    autoUpdater.checkForUpdatesAndNotify();
 
-    const showNewVersionMessage = info => {
+    autoUpdater.on('error', err => {
+      // No listener would make the EventEmitter throw and take the app down
+      // on a flaky network.
+      log(
+        `autoUpdater error: ${err == null ? 'unknown' : err.stack || String(err)}`
+      );
+    });
+
+    // macOS: the dmg target has no auto-update path (and Squirrel.Mac rejects
+    // unsigned apps), so only point to the release page.
+    if (isMac) {
+      autoUpdater.autoDownload = false;
+      autoUpdater.on('update-available', info => {
+        dialog
+          .showMessageBox({
+            title: '发现新版本 v' + info.version,
+            message: '发现新版本 v' + info.version,
+            detail: '是否前往 GitHub 下载新版本安装包？',
+            buttons: ['下载', '取消'],
+            type: 'question',
+            noLink: true,
+          })
+          .then(result => {
+            if (result.response === 0) {
+              shell.openExternal('https://github.com/EjuneG/Cassette/releases');
+            }
+          });
+      });
+      autoUpdater.checkForUpdates();
+      return;
+    }
+
+    // Windows (NSIS) / Linux (AppImage): download in the background —
+    // differentially via blockmap when the old assets allow it — then offer
+    // a restart-to-install.
+    autoUpdater.on('update-downloaded', info => {
       dialog
         .showMessageBox({
-          title: '发现新版本 v' + info.version,
-          message: '发现新版本 v' + info.version,
-          detail: '是否前往 GitHub 下载新版本安装包？',
-          buttons: ['下载', '取消'],
+          title: '更新已就绪',
+          message: '新版本 v' + info.version + ' 已下载完成',
+          detail: '选择「稍后」也会在下次退出应用时自动安装。',
+          buttons: ['立即重启更新', '稍后'],
           type: 'question',
           noLink: true,
         })
         .then(result => {
           if (result.response === 0) {
-            shell.openExternal(
-              'https://github.com/EjuneG/YesPlayMusic/releases'
-            );
+            // The tray-style close interceptors would swallow the quit that
+            // quitAndInstall() issues; forceQuit lets it through.
+            this.forceQuit = true;
+            autoUpdater.quitAndInstall();
           }
         });
-    };
-
-    autoUpdater.on('update-available', info => {
-      showNewVersionMessage(info);
     });
+    autoUpdater.checkForUpdates();
   }
 
   handleWindowEvents() {
@@ -320,6 +353,13 @@ class Background {
 
     this.window.on('close', e => {
       log('window close event');
+
+      if (this.forceQuit) {
+        // Updater-driven quit: never intercept, or quitAndInstall() stalls
+        // with the installer already spawned.
+        this.window = null;
+        return;
+      }
 
       if (isLinux) {
         closeOnLinux(e, this.window, this.store);
