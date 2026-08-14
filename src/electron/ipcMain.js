@@ -9,6 +9,7 @@ try {
   );
 }
 import { registerGlobalShortcut } from '@/electron/globalShortcut';
+import { autoUpdater } from 'electron-updater';
 import cloneDeep from 'lodash/cloneDeep';
 import shortcuts from '@/utils/shortcuts';
 import { createMenu } from './menu';
@@ -283,14 +284,18 @@ export function initIpcMain(win, store, trayEventEmitter) {
   ipcMain.on('setProxy', (event, config) => {
     const proxyRules = `${config.protocol}://${config.server}:${config.port}`;
     store.set('proxy', proxyRules);
-    win.webContents.session
-      .setProxy({ proxyRules })
-      .then(() => log('finished setProxy'));
+    // The updater downloads through its own session partition — keep it in
+    // sync with the window session or the in-app proxy never reaches it.
+    Promise.all([
+      win.webContents.session.setProxy({ proxyRules }),
+      autoUpdater.netSession.setProxy({ proxyRules }),
+    ]).then(() => log('finished setProxy'));
   });
 
   ipcMain.on('removeProxy', (event, arg) => {
     log('removeProxy');
     win.webContents.session.setProxy({});
+    autoUpdater.netSession.setProxy({});
     store.set('proxy', '');
   });
 

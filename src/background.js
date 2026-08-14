@@ -34,6 +34,7 @@ import Store from 'electron-store';
 import { createMpris, createDbus } from '@/electron/mpris';
 import { spawn } from 'child_process';
 import clc from 'cli-color';
+import logger from 'electron-log';
 import { initMainErrorReporter } from '@/utils/errorReporter';
 
 // Pin the Electron runtime identity to the original name. The userData dir
@@ -46,8 +47,17 @@ app.setName('yesplaymusic');
 
 initMainErrorReporter();
 
+// Persist main-process logs to disk so updater/network failures on a user's
+// machine can be diagnosed remotely — ask them for
+// ~/.config/yesplaymusic/logs/main.log (Windows:
+// %AppData%\yesplaymusic\logs\main.log). The colored console.log below
+// already covers the terminal, so electron-log's own console copy is off.
+logger.transports.file.level = 'info';
+logger.transports.console.level = false;
+
 const log = text => {
   console.log(`${clc.blueBright('[background.js]')} ${text}`);
+  logger.info(`[background.js] ${text}`);
 };
 
 const closeOnLinux = (e, win, store) => {
@@ -287,6 +297,14 @@ class Background {
     if (isDevelopment) return;
     log('checkForUpdates');
 
+    // electron-updater's internal steps (check, download progress, errors)
+    // land in the same main.log file — first thing to ask a user for.
+    autoUpdater.logger = logger;
+    // Never download without asking: some users reach GitHub over metered
+    // VPN traffic, so a ~120MB installer must not start eating their quota
+    // behind their back.
+    autoUpdater.autoDownload = false;
+
     autoUpdater.on('error', err => {
       // No listener would make the EventEmitter throw and take the app down
       // on a flaky network.
@@ -300,7 +318,6 @@ class Background {
     // macOS: the dmg target has no auto-update path (and Squirrel.Mac rejects
     // unsigned apps), so only point to the release page.
     if (isMac) {
-      autoUpdater.autoDownload = false;
       autoUpdater.on('update-available', info => {
         dialog
           .showMessageBox({
@@ -321,10 +338,38 @@ class Background {
       return;
     }
 
-    // Windows (NSIS) / Linux (AppImage): download in the background —
-    // differentially via blockmap when the old assets allow it — then offer
-    // a restart-to-install.
+    // Windows (NSIS) / Linux (AppImage): ask before downloading, mirror the
+    // download progress on the taskbar icon, then offer a restart-to-install.
+    autoUpdater.on('update-available', info => {
+      const sizeMB = Math.round((info.files?.[0]?.size ?? 0) / 1024 / 1024);
+      dialog
+        .showMessageBox({
+          title: '发现新版本',
+          message: '发现新版本 v' + info.version,
+          detail:
+            (sizeMB ? `安装包约 ${sizeMB} MB，` : '') +
+            '要现在下载吗？下载完成后会再询问是否重启安装。',
+          buttons: ['下载更新', '暂不更新'],
+          defaultId: 0,
+          cancelId: 1,
+          type: 'question',
+          noLink: true,
+        })
+        .then(result => {
+          if (result.response === 0) this.downloadUpdate();
+        });
+    });
+
+    autoUpdater.on('download-progress', progress => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.setProgressBar(progress.percent / 100);
+      }
+    });
+
     autoUpdater.on('update-downloaded', info => {
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.setProgressBar(-1);
+      }
       dialog
         .showMessageBox({
           title: '更新已就绪',
@@ -350,6 +395,34 @@ class Background {
         });
     });
     autoUpdater.checkForUpdates();
+  }
+
+  downloadUpdate() {
+    autoUpdater.downloadUpdate().catch(err => {
+      log(
+        `downloadUpdate failed: ${
+          err == null ? 'unknown' : err.stack || String(err)
+        }`
+      );
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.setProgressBar(-1);
+      }
+      dialog
+        .showMessageBox({
+          title: '更新下载失败',
+          message: '新版本没有下载成功',
+          detail:
+            '多半是网络或代理的问题（比如代理未开启、连接超时）。可以现在重试，也可以先继续使用当前版本，下次启动时会再提醒更新。',
+          buttons: ['重试', '暂不更新'],
+          defaultId: 0,
+          cancelId: 1,
+          type: 'warning',
+          noLink: true,
+        })
+        .then(result => {
+          if (result.response === 0) this.downloadUpdate();
+        });
+    });
   }
 
   handleWindowEvents() {
@@ -466,12 +539,18 @@ class Background {
       // init mini player ("The Deck")
       this.miniPlayer = initMiniPlayer(() => this.window, this.store);
 
-      // set proxy
+      // set proxy — electron-updater downloads through its own session
+      // partition and ignores the window session, so the in-app proxy has
+      // to be applied to autoUpdater.netSession separately. Await both
+      // before checkForUpdates() so the first check already goes through
+      // the proxy.
       const proxyRules = this.store.get('proxy');
       if (proxyRules) {
-        this.window.webContents.session
-          .setProxy({ proxyRules })
-          .then(() => log('finished setProxy'));
+        await Promise.all([
+          this.window.webContents.session.setProxy({ proxyRules }),
+          autoUpdater.netSession.setProxy({ proxyRules }),
+        ]);
+        log('finished setProxy');
       }
 
       // check for updates

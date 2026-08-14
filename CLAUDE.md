@@ -48,9 +48,12 @@ yarn electron:build-main   # Electron main process build (esbuild → dist-elect
 ypm-update                 # git pull + build:electron + electron:build-main + electron-builder + install
 ypm-update --no-pull       # build current working tree without pulling
 # Script lives at ~/.local/bin/ypm-update; runs `npx electron-builder --linux AppImage`.
-# After finishing a feature/fix that should land in the desktop app, run `ypm-update`
-# (or `ypm-update --no-pull` if changes are still uncommitted) so the installed AppImage
-# picks up the new code on next launch.
+# Do NOT run ypm-update automatically after changes. The installed AppImage is
+# the live testbed for in-app auto-update: leave it on the released version so
+# it upgrades itself through the real updater flow when the next release ships.
+# Only run ypm-update when explicitly asked.
+# (Current testbed state: local install = 1.3.1 + the new confirm-first updater
+# code, installed 2026-08-15 — the next release exercises the new flow.)
 
 # Code quality
 yarn lint                  # ESLint (vue/recommended + prettier)
