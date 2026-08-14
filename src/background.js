@@ -44,6 +44,16 @@ import { initMainErrorReporter } from '@/utils/errorReporter';
 // preserved functional identifier (like appId) — brand-facing names stay
 // "Cassette". Must run before any app.getPath('userData') / app ready.
 app.setName('yesplaymusic');
+// setName alone is not enough: import hoisting runs dependency require-time
+// code before it, and electron-log calls app.getPath() on require, which
+// pins userData/sessionData/logs to the package.json name ("cassette") so
+// the setName above no longer moves them. v1.3.2 shipped without the
+// explicit setPath calls below and relocated every profile to
+// ~/.config/cassette, logging users out. Force the derived paths so no
+// future import's require-time getPath can drift them again.
+app.setPath('userData', path.join(app.getPath('appData'), 'yesplaymusic'));
+app.setPath('sessionData', app.getPath('userData'));
+app.setAppLogsPath(path.join(app.getPath('userData'), 'logs'));
 
 initMainErrorReporter();
 
@@ -54,6 +64,11 @@ initMainErrorReporter();
 // already covers the terminal, so electron-log's own console copy is off.
 logger.transports.file.level = 'info';
 logger.transports.console.level = false;
+// The file transport caches its path variables at require time — before the
+// setPath pinning above — so give it an explicit resolver or logs land in
+// the drifted ~/.config/cassette/logs.
+logger.transports.file.resolvePath = () =>
+  path.join(app.getPath('userData'), 'logs', 'main.log');
 
 const log = text => {
   console.log(`${clc.blueBright('[background.js]')} ${text}`);
