@@ -1,6 +1,6 @@
 {
   "name": "cassette",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "private": true,
   "description": "Cassette — a third-party Netease Cloud Music player with the Studio Cassette UI. Hard fork of qier222/YesPlayMusic.",
   "author": "EjuneG <ejuneg6@gmail.com>",
