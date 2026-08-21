@@ -52,9 +52,9 @@ ypm-update --no-pull       # build current working tree without pulling
 # the live testbed for in-app auto-update: leave it on the released version so
 # it upgrades itself through the real updater flow when the next release ships.
 # Only run ypm-update when explicitly asked.
-# (Current testbed state: local install = 1.3.3 local build (commit 7b62643,
-# failure states + UNM changes), installed 2026-08-22 at user request. The
-# in-app updater will only trigger once a release ships with version > 1.3.3.)
+# (Current testbed state: local install = 1.3.3 local build, installed
+# 2026-08-22. v1.3.4 released the same day — the in-app updater should now
+# prompt on app start, exercising the confirm-first update flow end to end.)
 
 # Code quality
 yarn lint                  # ESLint (vue/recommended + prettier)
