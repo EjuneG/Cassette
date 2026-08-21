@@ -22,6 +22,15 @@ const INDEX_IN_PLAY_NEXT = -1;
 const UNPLAYABLE_CONDITION = {
   PLAY_NEXT_TRACK: 'playNextTrack',
   PLAY_PREV_TRACK: 'playPrevTrack',
+  DO_NOTHING: 'doNothing',
+};
+
+// isTrackPlayable()（src/utils/common.js）算出的 reason → 用户可读的失败原因
+const UNPLAYABLE_REASON_TEXT = {
+  'VIP Only': 'VIP 歌曲，当前账号无法播放',
+  付费专辑: '付费专辑，需购买后才能播放',
+  无版权: '该歌曲无版权',
+  已下架: '该歌曲已下架',
 };
 
 const electronAPI = window.electronAPI || null;
@@ -199,8 +208,13 @@ export default class {
     this._howler?.volume(this.volume);
 
     if (this._enabled) {
-      // 恢复当前播放歌曲
-      this._replaceCurrentTrack(this.currentTrackID, false).then(() => {
+      // 恢复当前播放歌曲。恢复失败（如 VIP 过期后歌曲不可播）时只提示，
+      // 不能自动跳去播下一首——那等于一打开 app 就自己开始放歌
+      this._replaceCurrentTrack(
+        this.currentTrackID,
+        false,
+        UNPLAYABLE_CONDITION.DO_NOTHING
+      ).then(() => {
         this._howler?.seek(localStorage.getItem('playerCurrentTrackTime') ?? 0);
       }); // update audio source and init howler
       this._initMediaSession();
@@ -462,6 +476,19 @@ export default class {
     }
     if (!this._unmAvailable) return null;
 
+    // 只对当前要播的歌提示（_cacheNextTrack 预取下一首也走这里，不该打扰）。
+    // 同时停掉还在响的上一首：UNM 搜索要十几秒，不停就是
+    // 「播放栏显示新歌、实际在放旧歌」的错位状态
+    if (track.id === this.currentTrackID) {
+      store.dispatch(
+        'showToast',
+        `「${track.name}」网易云无音源，正在搜索第三方音源…`
+      );
+      Howler.unload();
+      this._howler = null;
+      this._setPlaying(false);
+    }
+
     /**
      *
      * @param {string=} searchMode
@@ -579,13 +606,28 @@ export default class {
           }
           return replaced;
         } else {
-          store.dispatch('showToast', `无法播放 ${track.name}`);
+          // 迟到的失败（如 UNM 搜索很慢）不该打断用户已经切走的播放
+          if (track.id !== this.currentTrackID) return false;
+          const reason = UNPLAYABLE_REASON_TEXT[track.reason];
+          store.dispatch(
+            'showToast',
+            reason
+              ? `无法播放「${track.name}」：${reason}`
+              : `无法播放「${track.name}」`
+          );
+          // 停掉还在响的上一首。取音源失败时旧 Howler 不会被替换，
+          // 不停就会出现「播放栏显示新歌、实际在放旧歌」的错位状态
+          Howler.unload();
+          this._howler = null;
+          this._setPlaying(false);
           switch (ifUnplayableThen) {
             case UNPLAYABLE_CONDITION.PLAY_NEXT_TRACK:
               this.playNextTrack();
               break;
             case UNPLAYABLE_CONDITION.PLAY_PREV_TRACK:
               this.playPrevTrack();
+              break;
+            case UNPLAYABLE_CONDITION.DO_NOTHING:
               break;
             default:
               store.dispatch(
@@ -621,7 +663,12 @@ export default class {
           `[Player] _replaceCurrentTrackAudio(${track?.id}) failed:`,
           err
         );
-        store.dispatch('showToast', `加载音频失败，请重试`);
+        if (track?.id === this.currentTrackID) {
+          store.dispatch('showToast', `加载音频失败，请重试`);
+          Howler.unload();
+          this._howler = null;
+          this._setPlaying(false);
+        }
         return false;
       });
   }
@@ -820,6 +867,15 @@ export default class {
   }
   play() {
     if (this._howler?.playing()) return;
+
+    // 音源加载失败后 _howler 会被清空（见 _replaceCurrentTrackAudio），
+    // 此时把播放键当作重试入口，而不是静默无响应
+    if (this._howler === null) {
+      if (this._enabled && this.currentTrackID) {
+        this._replaceCurrentTrack(this.currentTrackID);
+      }
+      return;
+    }
 
     this._howler?.play();
 

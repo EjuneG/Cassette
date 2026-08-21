@@ -187,10 +187,13 @@ export function initIpcMain(win, store, trayEventEmitter) {
           : [],
       };
 
+      // 2026-08 体检：bilibili/pyncm/kugou（以及 kuwo/joox/qq）的接口均已失效，
+      // 全部秒回 NoMatchedSong；rust-napi 0.4 为最终版本，上游已归档，无法修复。
+      // 默认只留还活着的 ytdl（yt-dlp + YouTube）。用户仍可在设置里自定义源列表。
       const sourceList =
         typeof sourceListString === 'string'
           ? parseSourceStringToList(unmExecutor, sourceListString)
-          : ['ytdl', 'bilibili', 'pyncm', 'kugou'];
+          : ['ytdl'];
       log(`[UNM] using source: ${sourceList.join(', ')}`);
       log(`[UNM] using configuration: ${JSON.stringify(context)}`);
 
