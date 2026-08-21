@@ -509,21 +509,26 @@ export default class {
       }
     };
 
-    const retrieveSongInfo = await electronAPI.invoke(
-      'unblock-music',
-      store.state.settings.unmSource,
-      track,
-      {
-        enableFlac: store.state.settings.unmEnableFlac || null,
-        proxyUri: store.state.settings.unmProxyUri || null,
-        searchMode: determineSearchMode(store.state.settings.unmSearchMode),
-        config: {
-          'joox:cookie': store.state.settings.unmJooxCookie || null,
-          'qq:cookie': store.state.settings.unmQQCookie || null,
-          'ytdl:exe': store.state.settings.unmYtDlExe || null,
-        },
-      }
-    );
+    // UNM 自身没有超时：网络不通时 yt-dlp 会长时间重试，promise 一直不返回，
+    // 用户只会看到「正在搜索」然后再无下文。45 秒没结果就按失败处理
+    const retrieveSongInfo = await Promise.race([
+      electronAPI.invoke(
+        'unblock-music',
+        store.state.settings.unmSource,
+        track,
+        {
+          enableFlac: store.state.settings.unmEnableFlac || null,
+          proxyUri: store.state.settings.unmProxyUri || null,
+          searchMode: determineSearchMode(store.state.settings.unmSearchMode),
+          config: {
+            'joox:cookie': store.state.settings.unmJooxCookie || null,
+            'qq:cookie': store.state.settings.unmQQCookie || null,
+            'ytdl:exe': store.state.settings.unmYtDlExe || null,
+          },
+        }
+      ),
+      delay(45000).then(() => null),
+    ]);
 
     if (store.state.settings.automaticallyCacheSongs && retrieveSongInfo?.url) {
       // 对于来自 bilibili 的音源

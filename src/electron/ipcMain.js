@@ -195,6 +195,26 @@ export function initIpcMain(win, store, trayEventEmitter) {
           ? parseSourceStringToList(unmExecutor, sourceListString)
           : ['ytdl'];
       log(`[UNM] using source: ${sourceList.join(', ')}`);
+
+      // yt-dlp 是独立子进程，只认环境变量或 --proxy，不读系统(GNOME)代理设置；
+      // 桌面启动的 app 又没有代理环境变量。所以用户没填 UNM 代理时，
+      // 从 Chromium 的代理解析器兜底拿一个（DIRECT 则保持直连）
+      if (context && !context.proxyUri) {
+        try {
+          const resolved = await win.webContents.session.resolveProxy(
+            'https://www.youtube.com/'
+          );
+          const m = /^(PROXY|HTTPS|SOCKS5?|SOCKS4) +([^;\s]+)/i.exec(resolved);
+          if (m) {
+            const scheme = /^SOCKS/i.test(m[1]) ? 'socks5' : 'http';
+            context.proxyUri = `${scheme}://${m[2]}`;
+            log(`[UNM] falling back to system proxy: ${context.proxyUri}`);
+          }
+        } catch (e) {
+          log(`[UNM] resolveProxy failed: ${e}`);
+        }
+      }
+
       log(`[UNM] using configuration: ${JSON.stringify(context)}`);
 
       try {
